@@ -7,9 +7,13 @@ out GS_OUT {
 	float color_variance;
 } gs_out;
 
+in vec4 position[];
+	
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
+uniform mat4 inverseView;
+uniform mat4 inverseProjection;
 
 uniform sampler2D windMap;
 uniform float time;
@@ -194,7 +198,7 @@ void createQuad(vec4 position,float angle) {
 		// apply wind rotation to top two corners
 		if (i == 2) wind_rotation = windModel;
 		//set position
-		gl_Position = projection * view * model * (vec4(0.0, 0.0, 0.0, 1.0) + wind_rotation * randomness * rotation * offsets[i]);
+		gl_Position = gl_in[0].gl_Position + projection * view * model * (vec4(0.0, 0.0, 0.0, 1.0) + wind_rotation * randomness * rotation * offsets[i]);
 		//set texture coordinates
 		gs_out.textureCoords = texCoords[i];
 		gs_out.color_variance = fbm(position.xz);
@@ -204,9 +208,11 @@ void createQuad(vec4 position,float angle) {
 }
 
 void main() {
-	createQuad(gl_in[0].gl_Position, 0.0);
-	createQuad(gl_in[0].gl_Position, 45.0);
-	createQuad(gl_in[0].gl_Position, -45.0);
+	// world space position acts as seed for randomness (should be unique and will not change based on view)
+	mat4 pos = inverse(projection * view);
+	createQuad(projection * view * model * gl_in[0].gl_Position , 0.0);
+	createQuad(projection * view * model * gl_in[0].gl_Position , 45.0);
+	createQuad(projection * view * model * gl_in[0].gl_Position , -45.0);
 }
 
 mat4 rotateY(float angle) {

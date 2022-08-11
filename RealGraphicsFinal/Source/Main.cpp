@@ -74,6 +74,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
+unsigned int loadHeightmap(const char* path, int* height, int* width);
 void renderScene(Shader& shader, Model rhinocer, Model tree);
 void renderCube();
 void renderQuad();
@@ -83,7 +84,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(67.0f, 20.0f, 169.9f), glm::vec3(0.0f, 1.0f, 0.0f), -128.1f, -42.4f);
 float lastX = (float)SCR_WIDTH / 2.0;
 float lastY = (float)SCR_HEIGHT / 2.0;
 bool firstMouse = true;
@@ -264,6 +265,30 @@ void generatePlanes(unsigned int layers, Shader& shader, bool drawGrass) {
 }
 
 
+
+GLenum glCheckError_(const char* file, int line)
+{
+    GLenum errorCode;
+    while ((errorCode = glGetError()) != GL_NO_ERROR)
+    {
+        std::string error;
+        switch (errorCode)
+        {
+        case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
+        case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
+        case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
+        case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break;
+        case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break;
+        case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
+        }
+        std::cout << error << " | " << file << " (" << line << ")" << std::endl;
+    }
+    return errorCode;
+}
+#define glCheckError() glCheckError_(__FILE__, __LINE__) 
+
+
 int main()
 {
     // glfw: initialize and configure
@@ -310,7 +335,7 @@ int main()
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
-    //glDebugMessageCallback(GLDebugMessageCallback, NULL);
+    glDebugMessageCallback(GLDebugMessageCallback, NULL);
 
     // build and compile shaders
     // -------------------------
@@ -319,6 +344,9 @@ int main()
     Shader debugDepthQuad("./Shaders/debug_quad.vs", "./Shaders/debug_quad.fs", nullptr, nullptr, nullptr);
     Shader skyboxShader("./Shaders/skybox.vs", "./Shaders/skybox.fs", nullptr, nullptr, nullptr);
     Shader grassShader("./Shaders/grass.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", nullptr, nullptr);
+    Shader tessHeightMapShader("./Shaders/passthrough.vs", "./Shaders/terrain.fs", nullptr, "./Shaders/tessellation_ground.tesc", "./Shaders/tessellation_ground.tese");
+    Shader tessHeightMapGrassShader("./Shaders/passthrough.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", "./Shaders/tessellation.tesc", "./Shaders/tessellation.tese");
+
 
     //setup skybox
     float skyboxVertices[] = {
@@ -402,6 +430,94 @@ int main()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glBindVertexArray(0);
 
+
+    // set up vertex data (and buffer(s)) and configure vertex attributes
+    // ------------------------------------------------------------------
+    std::vector<float> vertices;
+    int width, height;
+    unsigned int height_map = loadHeightmap("./Textures/hmap6.png", &width, &height);
+    width = 257;
+    height = 257;
+    unsigned rez = 10;
+    for (unsigned i = 0; i <= rez - 1; i++)
+    {
+        for (unsigned j = 0; j <= rez - 1; j++)
+        {
+            vertices.push_back(-width / 2.0f + width * i / (float)rez); // v.x
+            vertices.push_back(0.0f); // v.y
+            vertices.push_back(-height / 2.0f + height * j / (float)rez); // v.z
+            vertices.push_back(i / (float)rez); // u
+            vertices.push_back(j / (float)rez); // v
+            vertices.push_back(0.0f);
+            vertices.push_back(1.0f);
+            vertices.push_back(0.0f);
+
+            std::cout << -width / 2.0f + width * i / (float)rez << ", " << "0.0, " << -height / 2.0f + height * j / (float)rez << std::endl;
+
+            vertices.push_back(-width / 2.0f + width * (i + 1) / (float)rez); // v.x
+            vertices.push_back(0.0f); // v.y
+            vertices.push_back(-height / 2.0f + height * j / (float)rez); // v.z
+            vertices.push_back((i + 1) / (float)rez); // u
+            vertices.push_back(j / (float)rez); // v
+            vertices.push_back(0.0f);
+            vertices.push_back(1.0f);
+            vertices.push_back(0.0f);
+
+            std::cout << -width / 2.0f + width * (i+1) / (float)rez << ", " << "0.0, " << -height / 2.0f + height * j / (float)rez << std::endl;
+
+
+
+            vertices.push_back(-width / 2.0f + width * i / (float)rez); // v.x
+            vertices.push_back(0.0f); // v.y
+            vertices.push_back(-height / 2.0f + height * (j + 1) / (float)rez); // v.z
+            vertices.push_back(i / (float)rez); // u
+            vertices.push_back((j + 1) / (float)rez); // v
+            vertices.push_back(0.0f);
+            vertices.push_back(1.0f);
+            vertices.push_back(0.0f);
+
+            std::cout << -width / 2.0f + width * i / (float)rez << ", " << "0.0, " << -height / 2.0f + height * (j+1) / (float)rez << std::endl;
+
+
+            vertices.push_back(-width / 2.0f + width * (i + 1) / (float)rez); // v.x
+            vertices.push_back(0.0f); // v.y
+            vertices.push_back(-height / 2.0f + height * (j + 1) / (float)rez); // v.z
+            vertices.push_back((i + 1) / (float)rez); // u
+            vertices.push_back((j + 1) / (float)rez); // v
+            vertices.push_back(0.0f);
+            vertices.push_back(1.0f);
+            vertices.push_back(0.0f);
+
+            std::cout << -width / 2.0f + width * (i+1) / (float)rez << ", " << "0.0, " << -height / 2.0f + height * (j+1) / (float)rez << std::endl;
+
+        }
+    }
+    std::cout << "Loaded " << rez * rez << " patches of 4 control points each" << std::endl;
+    std::cout << "Processing " << rez * rez * 4 << " vertices in vertex shader" << std::endl;
+
+    // first, configure the cube's VAO (and terrainVBO)
+    unsigned int terrainVAO, terrainVBO;
+    glGenVertexArrays(1, &terrainVAO);
+    glBindVertexArray(terrainVAO);
+
+    glGenBuffers(1, &terrainVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, terrainVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size(), &vertices[0], GL_STATIC_DRAW);
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // texCoord attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 3));
+    glEnableVertexAttribArray(1);
+
+    //normal
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)5);
+    glEnableVertexAttribArray(2);
+
+
+    glPatchParameteri(GL_PATCH_VERTICES, 4);
+
     // load textures
     // -------------
     stbi_set_flip_vertically_on_load(true);
@@ -442,9 +558,14 @@ int main()
     shader.setInt("shadowMap", 1);
     debugDepthQuad.use();
     debugDepthQuad.setInt("depthMap", 0);
-    grassShader.use();
-    grassShader.setInt("grass_texture", 0);
-    grassShader.setInt("windMap", 1);
+    tessHeightMapGrassShader.use();
+    tessHeightMapGrassShader.setInt("grass_texture", 0);
+    tessHeightMapGrassShader.setInt("windMap", 1);
+    tessHeightMapGrassShader.setInt("heightMap", 2);
+
+    tessHeightMapShader.use();
+    tessHeightMapShader.setInt("heightMap", 0);
+
 
     // lighting info
     // -------------
@@ -477,7 +598,9 @@ int main()
     (void)io;
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui_ImplOpenGL3_Init("#version 430");
+    glCheckError();
+
 
     while (!glfwWindowShouldClose(window))
     {
@@ -496,6 +619,9 @@ int main()
         // ------
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glCheckError();
+
 
         // 1. render depth of scene to texture (from light's perspective)
         // --------------------------------------------------------------
@@ -517,6 +643,34 @@ int main()
         glBindTexture(GL_TEXTURE_2D, woodTexture);
         //glCullFace(GL_FRONT);
         renderScene(simpleDepthShader, rhinocer, tree);
+        glCheckError();
+
+        tessHeightMapShader.use();
+
+        // view/projection transformations
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        tessHeightMapShader.setMat4("projection", projection);
+        tessHeightMapShader.setMat4("view", view);
+
+        // world transformation
+        glm::mat4 model = glm::mat4(1.0f);
+        tessHeightMapShader.setMat4("model", model);
+
+
+        // render the terrain
+        glActiveTexture(GL_TEXTURE0);
+        glCheckError();
+
+        glBindTexture(GL_TEXTURE_2D, height_map); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+        glCheckError();
+
+        glBindVertexArray(terrainVAO);
+        glCheckError();
+
+        glDrawArrays(GL_PATCHES, 0, 4 * rez * rez);
+
+        glCheckError();
         //glCullFace(GL_BACK);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -531,11 +685,15 @@ int main()
 
         // 2. render scene as normal using the generated depth/shadow map  
         // --------------------------------------------------------------
+
+                // be sure to activate shader when setting uniforms/drawing objects
+
+
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader.use();
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
+        glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        camera.GetViewMatrix();
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         // set light uniforms
@@ -607,48 +765,76 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, depthMap);
         renderScene(shader, rhinocer, tree);
-        generatePlanes(40, shader, false);
+        tessHeightMapShader.use();
+
+        // view/projection transformations
+        projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
+        view = camera.GetViewMatrix();
+        tessHeightMapShader.setMat4("projection", projection);
+        tessHeightMapShader.setMat4("view", view);
+
+        // world transformation
+        model = glm::mat4(1.0f);
+        tessHeightMapShader.setMat4("model", model);
+
+
+        // render the terrain
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, height_map); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+
+        glBindVertexArray(terrainVAO);
+        glDrawArrays(GL_PATCHES, 0, 4 * rez * rez);
+
+        glCheckError();
+        //generatePlanes(40, shader, false);
 
         
-        grassShader.use();
-        grassShader.setFloat("time", glfwGetTime());
-        grassShader.setFloat("time", (float)glfwGetTime());
+        tessHeightMapGrassShader.use();
+        tessHeightMapGrassShader.setFloat("time", glfwGetTime());
         //settings from imgui
-        grassShader.setBool("useWind", wind);
-        grassShader.setBool("useMultipleTextures", multipleTextures);
-        grassShader.setFloat("windspeed", windspeed);
-        grassShader.setFloat("min_grass_height", min_grass_height);
-        grassShader.setFloat("grass_height_factor", grass_height_factor);
-        grassShader.setFloat("grass1_density", grass1_density);
-        grassShader.setFloat("grass2_density", grass2_density);
-        grassShader.setFloat("grass3_density", grass3_density);
-        grassShader.setFloat("grass4_density", grass4_density);
-        grassShader.setFloat("flower1_density", flower1_density);
-        grassShader.setFloat("flower2_density", flower2_density);
-        grassShader.setFloat("flower3_density", flower3_density);
-        grassShader.setFloat("flower4_density", flower4_density);
-        grassShader.setBool("drawGrass1", drawGrass1);
-        grassShader.setBool("drawGrass2", drawGrass2);
-        grassShader.setBool("drawGrass3", drawGrass3);
-        grassShader.setBool("drawGrass4", drawGrass4);
-        grassShader.setBool("drawFlower1", drawFlower1);
-        grassShader.setBool("drawFlower2", drawFlower2);
-        grassShader.setBool("drawFlower3", drawFlower3);
-        grassShader.setBool("drawFlower4", drawFlower4);
-        grassShader.setBool("showBackgrounds", showBackgrounds);
+        tessHeightMapGrassShader.setBool("useWind", wind);
+        tessHeightMapGrassShader.setBool("useMultipleTextures", multipleTextures);
+        tessHeightMapGrassShader.setFloat("windspeed", windspeed);
+        tessHeightMapGrassShader.setFloat("min_grass_height", min_grass_height);
+        tessHeightMapGrassShader.setFloat("grass_height_factor", grass_height_factor);
+        tessHeightMapGrassShader.setFloat("grass1_density", grass1_density);
+        tessHeightMapGrassShader.setFloat("grass2_density", grass2_density);
+        tessHeightMapGrassShader.setFloat("grass3_density", grass3_density);
+        tessHeightMapGrassShader.setFloat("grass4_density", grass4_density);
+        tessHeightMapGrassShader.setFloat("flower1_density", flower1_density);
+        tessHeightMapGrassShader.setFloat("flower2_density", flower2_density);
+        tessHeightMapGrassShader.setFloat("flower3_density", flower3_density);
+        tessHeightMapGrassShader.setFloat("flower4_density", flower4_density);
+        tessHeightMapGrassShader.setBool("drawGrass1", drawGrass1);
+        tessHeightMapGrassShader.setBool("drawGrass2", drawGrass2);
+        tessHeightMapGrassShader.setBool("drawGrass3", drawGrass3);
+        tessHeightMapGrassShader.setBool("drawGrass4", drawGrass4);
+        tessHeightMapGrassShader.setBool("drawFlower1", drawFlower1);
+        tessHeightMapGrassShader.setBool("drawFlower2", drawFlower2);
+        tessHeightMapGrassShader.setBool("drawFlower3", drawFlower3);
+        tessHeightMapGrassShader.setBool("drawFlower4", drawFlower4);
+        tessHeightMapGrassShader.setBool("showBackgrounds", showBackgrounds);
 
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(6.0f, 0.0f, -0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(0.05f));	// it's a bit too big for our scene, so scale it down
-        grassShader.setMat4("model", model);
-        grassShader.setMat4("projection", projection);
-        grassShader.setMat4("view", view);
+        model = glm::mat4(1.0f);
+        //model = glm::translate(model, glm::vec3(6.0f, 0.0f, -0.0f)); // translate it down so it's at the center of the scene
+        model = glm::scale(model, glm::vec3(2.0f));	// it's a bit too big for our scene, so scale it down
+        tessHeightMapGrassShader.setMat4("model", model);
+        tessHeightMapGrassShader.setMat4("projection", projection);
+        tessHeightMapGrassShader.setMat4("view", view);
+        tessHeightMapGrassShader.setMat4("inverseView", glm::inverse(view));
+        tessHeightMapGrassShader.setMat4("inverseProjection", glm::inverse(projection));
+
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, grass_texture);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, wind_map);
-        glActiveTexture(GL_TEXTURE0);
-        generatePlanes(40, grassShader, true);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, height_map);
+        //generatePlanes(40, tessHeightMapGrassShader, true);
+
+        glBindVertexArray(terrainVAO);
+        glDrawArrays(GL_PATCHES, 0, 4 * rez * rez);
 
         // render Depth map to quad for visual debugging
         // ---------------------------------------------
@@ -661,11 +847,11 @@ int main()
         renderQuad();
 #endif
 
-        // draw skybox as last
+        //draw skybox as last
         glDepthFunc(GL_LEQUAL); // need LEQUAL instead of LESS
         skyboxShader.use();
         view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // undo translation
-        view = glm::scale(view, glm::vec3(50));
+        view = glm::scale(view, glm::vec3(500));
         skyboxShader.setMat4("view", view);
         skyboxShader.setMat4("projection", projection);
         skyboxShader.setVec4("color", skybox_color);
@@ -763,7 +949,7 @@ int main()
     glDeleteVertexArrays(1, &planeVAO);
     glDeleteBuffers(1, &planeVBO);
 
-    //end imgui
+    ////end imgui
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -1018,4 +1204,41 @@ unsigned int loadTexture(char const* path)
 
     return textureID;
 }
-#endif shadows2
+
+unsigned int loadHeightmap(char const* path, int* width, int* height) {
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load image, create texture and generate mipmaps
+    int nrChannels;
+    std::cout << "here" << std::endl;
+    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+    stbi_us* data = stbi_load_16(path, width, height, &nrChannels, 4);
+    std::cout << "here2" << std::endl;
+    if (data)
+    {
+        std::cout << "here3" << std::endl;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, *width, *height, 0, GL_RGBA, GL_UNSIGNED_SHORT, data); // Notice GL_UNSIGNED_SHORT
+        std::cout << "here4" << std::endl;
+
+        //glGenerateMipmap(GL_TEXTURE_2D);
+        std::cout << "Loaded heightmap of size " << *height << " x " << *width << std::endl;
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    return texture;
+}
+
+#endif
