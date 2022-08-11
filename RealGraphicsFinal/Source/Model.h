@@ -13,6 +13,7 @@ public:
 
 	void draw(Shader& shader);
 	void drawGrass(Shader& shader);
+	void drawInstances(Shader& shader, int n);
 
 private:
 	std::vector<Mesh> meshes;

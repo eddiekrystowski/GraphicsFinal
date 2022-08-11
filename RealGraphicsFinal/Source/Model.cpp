@@ -80,6 +80,12 @@ void Model::drawGrass(Shader& shader) {
 	}
 }
 
+void Model::drawInstances(Shader& shader, int n) {
+	for (unsigned int i = 0; i < this->meshes.size(); i++) {
+		meshes[i].drawInstances(shader, n);
+	}
+}
+
 void Model::processNode(aiNode* node, const aiScene* scene) {
 	// process every mesh for node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
