@@ -75,3 +75,22 @@ void Mesh::drawGrass(Shader& shader) {
 	glDrawElements(GL_POINTS, indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
+
+void Mesh::drawInstances(Shader& shader, int n) {
+	// setup textures
+	unsigned int diffuse_count = 1;
+	unsigned int specular_count = 1;
+	for (unsigned int i = 0; i < textures.size(); i++) {
+		glActiveTexture(GL_TEXTURE0 + i);
+		std::string number;
+		std::string type = textures[i].type; // diffuse or specular
+		if (type == "texture_diffuse") number = std::to_string(diffuse_count++);
+		if (type == "texture_specular") number = std::to_string(specular_count++);
+		shader.setInt(("material." + type + number).c_str(), i);
+		glBindTexture(GL_TEXTURE_2D, textures[i].id);
+	}
+	glActiveTexture(GL_TEXTURE0);
+	glBindVertexArray(VAO);
+	glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0, n);
+	glBindVertexArray(0);
+}

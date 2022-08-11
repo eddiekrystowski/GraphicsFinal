@@ -17,6 +17,7 @@ public:
     //render
     void draw(Shader& shader);
     void drawGrass(Shader& shader);
+    void drawInstances(Shader& shader, int n);
 
 private:
     unsigned int VAO, VBO, EBO; //, grassVAO, grassVBO;

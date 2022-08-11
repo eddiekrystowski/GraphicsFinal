@@ -75,7 +75,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
 unsigned int loadHeightmap(const char* path, int* height, int* width);
-void renderScene(Shader& shader, Model rhinocer);
+void renderScene(Shader& shader, Model rhinocer, Model tree);
 void renderCube();
 void renderQuad();
 
@@ -549,6 +549,7 @@ int main()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     Model rhinocer("./Models/castle_no_ground.obj");
+    Model tree("./Models/tree_model.obj");
 
     // shader configuration
     // --------------------
@@ -641,9 +642,7 @@ int main()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, woodTexture);
         //glCullFace(GL_FRONT);
-        glCheckError();
-
-        renderScene(simpleDepthShader, rhinocer);
+        renderScene(simpleDepthShader, rhinocer, tree);
         glCheckError();
 
         tessHeightMapShader.use();
@@ -765,7 +764,7 @@ int main()
         glBindTexture(GL_TEXTURE_2D, woodTexture);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, depthMap);
-        renderScene(shader, rhinocer);
+        renderScene(shader, rhinocer, tree);
         tessHeightMapShader.use();
 
         // view/projection transformations
@@ -962,7 +961,7 @@ int main()
 
 // renders the 3D scene
 // --------------------
-void renderScene(Shader& shader, Model rhinocer)
+void renderScene(Shader& shader, Model rhinocer, Model tree)
 {
     // floor
     glm::mat4 model = glm::mat4(1.0f);
@@ -994,7 +993,7 @@ void renderScene(Shader& shader, Model rhinocer)
     model = glm::scale(model, glm::vec3(0.05f));	// it's a bit too big for our scene, so scale it down
     shader.setMat4("model", model);
     rhinocer.draw(shader);
-
+    tree.drawInstances(shader, 1);
 }
 
 
