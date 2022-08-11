@@ -156,10 +156,17 @@
     <None Include="Shaders\grass.fs" />
     <None Include="Shaders\grass.gs" />
     <None Include="Shaders\grass.vs" />
+    <None Include="Shaders\passthrough.vs" />
     <None Include="Shaders\skybox.fs" />
     <None Include="Shaders\skybox.vs" />
+    <None Include="Shaders\terrain.fs" />
+    <None Include="Shaders\tessellation_ground.tesc" />
+    <None Include="Shaders\tessellation.tesc" />
+    <None Include="Shaders\tessellation.tese" />
+    <None Include="Shaders\tessellation_ground.tese" />
     <None Include="Shaders\verysimple.fs" />
     <None Include="Shaders\verysimple.vs" />
+    <None Include="Source\ImGUI\imgui.ini" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Camera.h" />
