@@ -210,9 +210,9 @@ void createQuad(vec4 position,float angle) {
 void main() {
 	// world space position acts as seed for randomness (should be unique and will not change based on view)
 	mat4 pos = inverse(projection * view);
-	createQuad(projection * view * model * gl_in[0].gl_Position , 0.0);
-	createQuad(projection * view * model * gl_in[0].gl_Position , 45.0);
-	createQuad(projection * view * model * gl_in[0].gl_Position , -45.0);
+	createQuad(position[0] , 0.0);
+	createQuad(position[0] , 45.0);
+	createQuad(position[0] , -45.0);
 }
 
 mat4 rotateY(float angle) {
