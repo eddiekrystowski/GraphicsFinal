@@ -106,8 +106,6 @@ void Water::Render(Camera* camera, WaterFrameBuffer* waterFrameBuffer) {
 	glActiveTexture(GL_TEXTURE0 + 4);
 	glBindTexture(GL_TEXTURE_2D, waterFrameBuffer->GetRefractionDepthTexture());
 
-	std::cout << "About to set shader uniforms in WATER" << std::endl;
-
 	shader->setFloat("near", camera->GetNearClip());
 	shader->setFloat("far", camera->GetFarClip());
 	shader->setVec3("lightPosition", light_position);
@@ -122,8 +120,6 @@ void Water::Render(Camera* camera, WaterFrameBuffer* waterFrameBuffer) {
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(-128, 0, -128));
 	shader->setMat4("gWorld", model);
-
-	std::cout << "FINISHED shader uniforms in WATER" << std::endl;
 
 
 	glDrawElements(GL_TRIANGLES, mesh->num_indices, GL_UNSIGNED_INT, 0);

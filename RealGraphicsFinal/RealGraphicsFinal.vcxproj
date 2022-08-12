@@ -149,6 +149,7 @@
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Water.cpp" />
     <ClCompile Include="Source\WaterFrameBuffer.cpp" />
+    <ClCompile Include="Source\Terrain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\debug_quad.fs" />
@@ -186,6 +187,7 @@
     <ClInclude Include="Source\Vertex.h" />
     <ClInclude Include="Source\Water.h" />
     <ClInclude Include="Source\WaterFrameBuffer.h" />
+    <ClInclude Include="Source\Terrain.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
