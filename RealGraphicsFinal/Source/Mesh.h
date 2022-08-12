@@ -10,9 +10,13 @@ public:
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
 
+    unsigned int VAO, VBO, EBO; //, grassVAO, grassVBO;
+    unsigned int num_indices;
+
     //constructors
     Mesh();
     Mesh(std::vector<Vertex> aVertices, std::vector<unsigned int> aIndices, std::vector<Texture> aTextures);
+    Mesh(std::vector<Vertex> aVertices, std::vector<unsigned int> aIndices);
 
     //render
     void draw(Shader& shader);
@@ -20,7 +24,6 @@ public:
     void drawInstances(Shader& shader, int n);
 
 private:
-    unsigned int VAO, VBO, EBO; //, grassVAO, grassVBO;
 
     void configure();
 };

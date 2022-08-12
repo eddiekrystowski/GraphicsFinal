@@ -134,6 +134,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Light.cpp" />
+    <ClCompile Include="Source\Camera.cpp" />
     <ClCompile Include="Source\ImGUI\imgui.cpp" />
     <ClCompile Include="Source\ImGUI\imgui_demo.cpp" />
     <ClCompile Include="Source\ImGUI\imgui_draw.cpp" />
@@ -145,6 +147,8 @@
     <ClCompile Include="Source\Mesh.cpp" />
     <ClCompile Include="Source\glad.c" />
     <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\Water.cpp" />
+    <ClCompile Include="Source\WaterFrameBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\debug_quad.fs" />
@@ -157,6 +161,8 @@
     <None Include="Shaders\grass.gs" />
     <None Include="Shaders\grass.vs" />
     <None Include="Shaders\passthrough.vs" />
+    <None Include="Shaders\Shader.fs" />
+    <None Include="Shaders\Shader.vs" />
     <None Include="Shaders\skybox.fs" />
     <None Include="Shaders\skybox.vs" />
     <None Include="Shaders\terrain.fs" />
@@ -166,15 +172,20 @@
     <None Include="Shaders\tessellation_ground.tese" />
     <None Include="Shaders\verysimple.fs" />
     <None Include="Shaders\verysimple.vs" />
+    <None Include="Shaders\water.fs" />
+    <None Include="Shaders\water.vs" />
     <None Include="Source\ImGUI\imgui.ini" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Light.h" />
     <ClInclude Include="Source\Camera.h" />
     <ClInclude Include="Source\Mesh.h" />
     <ClInclude Include="Source\Model.h" />
     <ClInclude Include="Source\shader_s.h" />
     <ClInclude Include="Source\Texture.h" />
     <ClInclude Include="Source\Vertex.h" />
+    <ClInclude Include="Source\Water.h" />
+    <ClInclude Include="Source\WaterFrameBuffer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
