@@ -14,6 +14,8 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include "ImguiHelper.h"
+
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -39,33 +41,6 @@
 #pragma warning( disable : 26451 )
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-
-//settings for imgui
-bool renderGrass = true;
-bool drawGround = true;
-bool wind = true;
-bool multipleTextures = true;
-float grass1_density = 0.33;
-float grass2_density = 0.33;
-float grass3_density = 0.33;
-float grass4_density = 0.11;
-float flower1_density = 0.02;
-float flower2_density = 0.02;
-float flower3_density = 0.03;
-float flower4_density = 0.03;
-bool drawGrass1 = true;
-bool drawGrass2 = true;
-bool drawGrass3 = true;
-bool drawGrass4 = true;
-bool drawFlower1 = true;
-bool drawFlower2 = true;
-bool drawFlower3 = true;
-bool drawFlower4 = true;
-float min_grass_height = 0.5f;
-float grass_height_factor = 1.0f;
-float windspeed = 0.15;
-float windstrength = 0.15;
-bool showBackgrounds = false;
 
 #define final_project
 #ifdef final_project
@@ -230,31 +205,31 @@ void generatePlanes(unsigned int layers, Shader& shader, bool drawGrass) {
     shader.use();
     shader.setFloat("time", (float)glfwGetTime());
     //settings from imgui
-    shader.setBool("useWind", wind);
-    shader.setBool("useMultipleTextures", multipleTextures);
-    shader.setFloat("windspeed", windspeed);
-    shader.setFloat("min_grass_height", min_grass_height);
-    shader.setFloat("grass_height_factor", grass_height_factor);
-    shader.setFloat("grass1_density", grass1_density);
-    shader.setFloat("grass2_density", grass2_density);
-    shader.setFloat("grass3_density", grass3_density);
-    shader.setFloat("grass4_density", grass4_density);
-    shader.setFloat("flower1_density", flower1_density);
-    shader.setFloat("flower2_density", flower2_density);
-    shader.setFloat("flower3_density", flower3_density);
-    shader.setFloat("flower4_density", flower4_density);
-    shader.setBool("drawGrass1", drawGrass1);
-    shader.setBool("drawGrass2", drawGrass2);
-    shader.setBool("drawGrass3", drawGrass3);
-    shader.setBool("drawGrass4", drawGrass4);
-    shader.setBool("drawFlower1", drawFlower1);
-    shader.setBool("drawFlower2", drawFlower2);
-    shader.setBool("drawFlower3", drawFlower3);
-    shader.setBool("drawFlower4", drawFlower4);
-    shader.setBool("showBackgrounds", showBackgrounds);
+    shader.setBool("useWind", ImguiHelper::wind);
+    shader.setBool("useMultipleTextures", ImguiHelper::multipleTextures);
+    shader.setFloat("windspeed", ImguiHelper::windspeed);
+    shader.setFloat("min_grass_height", ImguiHelper::min_grass_height);
+    shader.setFloat("grass_height_factor", ImguiHelper::grass_height_factor);
+    shader.setFloat("grass1_density", ImguiHelper::grass1_density);
+    shader.setFloat("grass2_density", ImguiHelper::grass2_density);
+    shader.setFloat("grass3_density", ImguiHelper::grass3_density);
+    shader.setFloat("grass4_density", ImguiHelper::grass4_density);
+    shader.setFloat("flower1_density", ImguiHelper::flower1_density);
+    shader.setFloat("flower2_density", ImguiHelper::flower2_density);
+    shader.setFloat("flower3_density", ImguiHelper::flower3_density);
+    shader.setFloat("flower4_density", ImguiHelper::flower4_density);
+    shader.setBool("drawGrass1", ImguiHelper::drawGrass1);
+    shader.setBool("drawGrass2", ImguiHelper::drawGrass2);
+    shader.setBool("drawGrass3", ImguiHelper::drawGrass3);
+    shader.setBool("drawGrass4", ImguiHelper::drawGrass4);
+    shader.setBool("drawFlower1", ImguiHelper::drawFlower1);
+    shader.setBool("drawFlower2", ImguiHelper::drawFlower2);
+    shader.setBool("drawFlower3", ImguiHelper::drawFlower3);
+    shader.setBool("drawFlower4", ImguiHelper::drawFlower4);
+    shader.setBool("showBackgrounds", ImguiHelper::showBackgrounds);
     for (int i = 0; i < layers; i++) {
         for (int j = 0; j < layers; j++) {
-            if (drawGrass && renderGrass) {
+            if (drawGrass && ImguiHelper::renderGrass) {
                 drawPlane(glm::vec3(0.5 * i, 1.0, 0.5 * j), glm::vec3(1.0f), shader, true);
             }
             else {
@@ -263,8 +238,6 @@ void generatePlanes(unsigned int layers, Shader& shader, bool drawGrass) {
         }
     }
 }
-
-
 
 GLenum glCheckError_(const char* file, int line)
 {
@@ -346,7 +319,67 @@ int main()
     Shader grassShader("./Shaders/grass.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", nullptr, nullptr);
     Shader tessHeightMapShader("./Shaders/passthrough.vs", "./Shaders/terrain.fs", nullptr, "./Shaders/tessellation_ground.tesc", "./Shaders/tessellation_ground.tese");
     Shader tessHeightMapGrassShader("./Shaders/passthrough.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", "./Shaders/tessellation.tesc", "./Shaders/tessellation.tese");
+    Shader treeShader("./Shaders/treeShader.vs", "./Shaders/treeShader.fs", nullptr, nullptr, nullptr);
 
+    // tree positions
+    glm::vec3 treePositions[50] = {
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(1.0f, 0.0f, 1.0f),
+        glm::vec3(2.0f, 0.0f, 2.0f),
+        glm::vec3(3.0f, 0.0f, 3.0f),
+        glm::vec3(4.0f, 0.0f, 4.0f),
+        glm::vec3(5.0f, 0.0f, 5.0f),
+        glm::vec3(6.0f, 0.0f, 6.0f),
+        glm::vec3(7.0f, 0.0f, 6.0f),
+        glm::vec3(8.0f, 0.0f, 6.0f),
+        glm::vec3(9.0f, 0.0f, 6.0f),
+        glm::vec3(10.0f, 0.0f, 6.0f),
+        glm::vec3(11.0f, 0.0f, 6.0f),
+        glm::vec3(12.0f, 0.0f, 6.0f),
+        glm::vec3(13.0f, 0.0f, 6.0f),
+        glm::vec3(14.0f, 0.0f, 6.0f),
+        glm::vec3(15.0f, 0.0f, 6.0f),
+        glm::vec3(16.0f, 0.0f, 6.0f),
+        glm::vec3(17.0f, 0.0f, 6.0f),
+        glm::vec3(18.0f, 0.0f, 6.0f),
+        glm::vec3(19.0f, 0.0f, 6.0f),
+        glm::vec3(20.0f, 0.0f, 6.0f),
+        glm::vec3(21.0f, 0.0f, 6.0f),
+        glm::vec3(22.0f, 0.0f, 6.0f),
+        glm::vec3(23.0f, 0.0f, 6.0f),
+        glm::vec3(24.0f, 0.0f, 6.0f),
+        glm::vec3(25.0f, 0.0f, 6.0f),
+        glm::vec3(26.0f, 0.0f, 6.0f),
+        glm::vec3(27.0f, 0.0f, 6.0f),
+        glm::vec3(28.0f, 0.0f, 6.0f),
+        glm::vec3(29.0f, 0.0f, 6.0f),
+        glm::vec3(30.0f, 0.0f, 6.0f),
+        glm::vec3(31.0f, 0.0f, 6.0f),
+        glm::vec3(32.0f, 0.0f, 6.0f),
+        glm::vec3(33.0f, 0.0f, 6.0f),
+        glm::vec3(34.0f, 0.0f, 6.0f),
+        glm::vec3(35.0f, 0.0f, 6.0f),
+        glm::vec3(36.0f, 0.0f, 6.0f),
+        glm::vec3(37.0f, 0.0f, 6.0f),
+        glm::vec3(38.0f, 0.0f, 6.0f),
+        glm::vec3(39.0f, 0.0f, 6.0f),
+        glm::vec3(40.0f, 0.0f, 6.0f),
+        glm::vec3(41.0f, 0.0f, 6.0f),
+        glm::vec3(42.0f, 0.0f, 6.0f),
+        glm::vec3(43.0f, 0.0f, 6.0f),
+        glm::vec3(44.0f, 0.0f, 6.0f),
+        glm::vec3(45.0f, 0.0f, 6.0f),
+        glm::vec3(46.0f, 0.0f, 6.0f),
+        glm::vec3(47.0f, 0.0f, 6.0f),
+        glm::vec3(48.0f, 0.0f, 6.0f),
+        glm::vec3(49.0f, 0.0f, 6.0f),
+    };
+
+    unsigned int instanceVBO;
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 50, &treePositions[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     //setup skybox
     float skyboxVertices[] = {
@@ -438,7 +471,7 @@ int main()
     unsigned int height_map = loadHeightmap("./Textures/hmap6.png", &width, &height);
     width = 257;
     height = 257;
-    unsigned rez = 10;
+    unsigned rez = 30;
     for (unsigned i = 0; i <= rez - 1; i++)
     {
         for (unsigned j = 0; j <= rez - 1; j++)
@@ -524,6 +557,8 @@ int main()
     unsigned int woodTexture = loadTexture("./Textures/JC-OceanBlue.jpg");
     unsigned int grass_texture = loadTexture("./Textures/grass_atlas_noborder.png");
     unsigned int wind_map = loadTexture("./Textures/wind.jpg");
+    unsigned int dirt = loadTexture("./Textures/dirttexture.png");
+    unsigned int grassTexture = loadTexture("./Textures/dirttexture.png");
 
     // configure depth map FBO
     // -----------------------
@@ -549,7 +584,7 @@ int main()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     Model rhinocer("./Models/castle_no_ground.obj");
-    Model tree("./Models/tree_model.obj");
+    Model tree("./Models/tree_model2.obj");
 
     // shader configuration
     // --------------------
@@ -562,45 +597,22 @@ int main()
     tessHeightMapGrassShader.setInt("grass_texture", 0);
     tessHeightMapGrassShader.setInt("windMap", 1);
     tessHeightMapGrassShader.setInt("heightMap", 2);
-
     tessHeightMapShader.use();
     tessHeightMapShader.setInt("heightMap", 0);
+    tessHeightMapShader.setInt("dirtTexture", 1);
+    tessHeightMapShader.setInt("grassTexture", 2);
+
 
 
     // lighting info
     // -------------
     glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
 
-    // initialize settings
-    // -----------
-
-    bool drawCastle = true;
-    bool drawOcean = true;
-    bool drawSkybox = true;
-    bool timeOfDay = false;
-    bool AutoTime = false;
-    float timestep = 0.02;
-    float fogStart = 0.0f;
-    float fogEnd = 100.0f;
-
-    float lightColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    float fogColor[] = { 0.7, 0.8, 0.9, 1.0 };
-    float time = 0.0;
-    float tempx = 0.0f, tempy = 0.0f, tempz = 0.0f;
-    glm::vec3 temp_pos(tempx, tempy, tempz);
-
     glm::vec3 lightLevel(1.0f, 1.0f, 1.0f);
     glm::vec4 skybox_color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
     //setup IMGUI
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
-    ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 430");
-    glCheckError();
-
+    ImguiHelper::setup(window);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -679,9 +691,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // new ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        ImguiHelper::createFrame();
 
         // 2. render scene as normal using the generated depth/shadow map  
         // --------------------------------------------------------------
@@ -703,9 +713,9 @@ int main()
         shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 
         //set fog
-        shader.setFloat("fogStart", fogStart);
-        shader.setFloat("fogEnd", fogEnd);
-        shader.setVec4("fogColor", fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
+        shader.setFloat("fogStart", ImguiHelper::fogStart);
+        shader.setFloat("fogEnd", ImguiHelper::fogEnd);
+        shader.setVec4("fogColor", ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]);
 
         //set point lights
         shader.setInt("num_points", 4);
@@ -716,9 +726,9 @@ int main()
         shader.setInt("num_points", num_point_lights);
         //first point light
         shader.setVec3("pointLights[0].position", glm::vec3(-14.286f / 2.0f, 6.032f / 2.0f, -3.492f / 2.0f));
-        shader.setVec3("pointLights[0].ambient", glm::vec3(0.1f) * RGB(224.0f, 117.0f, 67.0f));
-        shader.setVec3("pointLights[0].diffuse", glm::vec3(0.4f) * RGB(224.0f, 117.0f, 67.0f));
-        shader.setVec3("pointLights[0].specular", glm::vec3(0.4f) * RGB(224.0f, 117.0f, 67.0f));
+        shader.setVec3("pointLights[0].ambient", glm::vec3(0.5f) * RGB(224.0f, 117.0f, 67.0f));
+        shader.setVec3("pointLights[0].diffuse", glm::vec3(0.7f) * RGB(224.0f, 117.0f, 67.0f));
+        shader.setVec3("pointLights[0].specular", glm::vec3(0.9f) * RGB(224.0f, 117.0f, 67.0f));
         shader.setFloat("pointLights[0].constant", 1.0f);
         shader.setFloat("pointLights[0].linear", 1.5f);
         shader.setFloat("pointLights[0].quadratic", 5.0f);
@@ -749,16 +759,18 @@ int main()
 #endif
         //set directional light
         shader.setVec3("dir_light.lightPos", lightPos);
-        if (!timeOfDay) {
-            shader.setVec3("dir_light.ambient", glm::vec3(0.1f) * glm::vec3(lightColor[0], lightColor[1], lightColor[2]));
-            shader.setVec3("dir_light.diffuse", glm::vec3(0.4f) * glm::vec3(lightColor[0], lightColor[1], lightColor[2]));
-            shader.setVec3("dir_light.specular", glm::vec3(1.0) * glm::vec3(lightColor[0], lightColor[1], lightColor[2]));
+        if (!ImguiHelper::timeOfDay) {
+            shader.setVec3("dir_light.ambient", glm::vec3(0.1f) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]));
+            shader.setVec3("dir_light.diffuse", glm::vec3(0.4f) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]));
+            shader.setVec3("dir_light.specular", glm::vec3(1.0) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]));
         }
         else {
-            shader.setVec3("dir_light.ambient", glm::vec3(0.01f) * glm::vec3(lightColor[0], lightColor[1], lightColor[2]) * lightLevel);
-            shader.setVec3("dir_light.diffuse", glm::vec3(0.4f) * glm::vec3(lightColor[0], lightColor[1], lightColor[2]) * lightLevel);
-            shader.setVec3("dir_light.specular", glm::vec3(1.0) * glm::vec3(lightColor[0], lightColor[1], lightColor[2]) * lightLevel);
+            shader.setVec3("dir_light.ambient", glm::vec3(0.01f) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * lightLevel);
+            shader.setVec3("dir_light.diffuse", glm::vec3(0.4f) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * lightLevel);
+            shader.setVec3("dir_light.specular", glm::vec3(1.0) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * lightLevel);
         }
+
+        
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, woodTexture);
@@ -776,11 +788,16 @@ int main()
         // world transformation
         model = glm::mat4(1.0f);
         tessHeightMapShader.setMat4("model", model);
-
+        tessHeightMapShader.setFloat("water_level", 0.0f);
 
         // render the terrain
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, height_map); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, dirt);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, grassTexture);
+
 
         glBindVertexArray(terrainVAO);
         glDrawArrays(GL_PATCHES, 0, 4 * rez * rez);
@@ -792,28 +809,28 @@ int main()
         tessHeightMapGrassShader.use();
         tessHeightMapGrassShader.setFloat("time", glfwGetTime());
         //settings from imgui
-        tessHeightMapGrassShader.setBool("useWind", wind);
-        tessHeightMapGrassShader.setBool("useMultipleTextures", multipleTextures);
-        tessHeightMapGrassShader.setFloat("windspeed", windspeed);
-        tessHeightMapGrassShader.setFloat("min_grass_height", min_grass_height);
-        tessHeightMapGrassShader.setFloat("grass_height_factor", grass_height_factor);
-        tessHeightMapGrassShader.setFloat("grass1_density", grass1_density);
-        tessHeightMapGrassShader.setFloat("grass2_density", grass2_density);
-        tessHeightMapGrassShader.setFloat("grass3_density", grass3_density);
-        tessHeightMapGrassShader.setFloat("grass4_density", grass4_density);
-        tessHeightMapGrassShader.setFloat("flower1_density", flower1_density);
-        tessHeightMapGrassShader.setFloat("flower2_density", flower2_density);
-        tessHeightMapGrassShader.setFloat("flower3_density", flower3_density);
-        tessHeightMapGrassShader.setFloat("flower4_density", flower4_density);
-        tessHeightMapGrassShader.setBool("drawGrass1", drawGrass1);
-        tessHeightMapGrassShader.setBool("drawGrass2", drawGrass2);
-        tessHeightMapGrassShader.setBool("drawGrass3", drawGrass3);
-        tessHeightMapGrassShader.setBool("drawGrass4", drawGrass4);
-        tessHeightMapGrassShader.setBool("drawFlower1", drawFlower1);
-        tessHeightMapGrassShader.setBool("drawFlower2", drawFlower2);
-        tessHeightMapGrassShader.setBool("drawFlower3", drawFlower3);
-        tessHeightMapGrassShader.setBool("drawFlower4", drawFlower4);
-        tessHeightMapGrassShader.setBool("showBackgrounds", showBackgrounds);
+        tessHeightMapGrassShader.setBool("useWind", ImguiHelper::wind);
+        tessHeightMapGrassShader.setBool("useMultipleTextures", ImguiHelper::multipleTextures);
+        tessHeightMapGrassShader.setFloat("windspeed", ImguiHelper::windspeed);
+        tessHeightMapGrassShader.setFloat("min_grass_height", ImguiHelper::min_grass_height);
+        tessHeightMapGrassShader.setFloat("grass_height_factor", ImguiHelper::grass_height_factor);
+        tessHeightMapGrassShader.setFloat("grass1_density", ImguiHelper::grass1_density);
+        tessHeightMapGrassShader.setFloat("grass2_density", ImguiHelper::grass2_density);
+        tessHeightMapGrassShader.setFloat("grass3_density", ImguiHelper::grass3_density);
+        tessHeightMapGrassShader.setFloat("grass4_density", ImguiHelper::grass4_density);
+        tessHeightMapGrassShader.setFloat("flower1_density", ImguiHelper::flower1_density);
+        tessHeightMapGrassShader.setFloat("flower2_density", ImguiHelper::flower2_density);
+        tessHeightMapGrassShader.setFloat("flower3_density", ImguiHelper::flower3_density);
+        tessHeightMapGrassShader.setFloat("flower4_density", ImguiHelper::flower4_density);
+        tessHeightMapGrassShader.setBool("drawGrass1", ImguiHelper::drawGrass1);
+        tessHeightMapGrassShader.setBool("drawGrass2", ImguiHelper::drawGrass2);
+        tessHeightMapGrassShader.setBool("drawGrass3", ImguiHelper::drawGrass3);
+        tessHeightMapGrassShader.setBool("drawGrass4", ImguiHelper::drawGrass4);
+        tessHeightMapGrassShader.setBool("drawFlower1", ImguiHelper::drawFlower1);
+        tessHeightMapGrassShader.setBool("drawFlower2", ImguiHelper::drawFlower2);
+        tessHeightMapGrassShader.setBool("drawFlower3", ImguiHelper::drawFlower3);
+        tessHeightMapGrassShader.setBool("drawFlower4", ImguiHelper::drawFlower4);
+        tessHeightMapGrassShader.setBool("showBackgrounds", ImguiHelper::showBackgrounds);
 
         model = glm::mat4(1.0f);
         //model = glm::translate(model, glm::vec3(6.0f, 0.0f, -0.0f)); // translate it down so it's at the center of the scene
@@ -823,6 +840,7 @@ int main()
         tessHeightMapGrassShader.setMat4("view", view);
         tessHeightMapGrassShader.setMat4("inverseView", glm::inverse(view));
         tessHeightMapGrassShader.setMat4("inverseProjection", glm::inverse(projection));
+        tessHeightMapGrassShader.setFloat("water_level", 0.0f);
 
 
         glActiveTexture(GL_TEXTURE0);
@@ -856,55 +874,33 @@ int main()
         skyboxShader.setMat4("projection", projection);
         skyboxShader.setVec4("color", skybox_color);
         skyboxShader.setVec3("viewPos", camera.Position);
-        skyboxShader.setFloat("fogStart", fogStart);
-        skyboxShader.setFloat("fogEnd", fogEnd);
-        skyboxShader.setVec4("fogColor", fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
+        skyboxShader.setFloat("fogStart", ImguiHelper::fogStart);
+        skyboxShader.setFloat("fogEnd", ImguiHelper::fogEnd);
+        skyboxShader.setVec4("fogColor", ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]);
         // skybox cube
         glBindVertexArray(skyboxVAO);
         //draw skybox
-        if (drawSkybox) glDrawArrays(GL_TRIANGLES, 0, 36);
+        if (ImguiHelper::drawSkybox) glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
         glDepthFunc(GL_LESS); // set back to LESS
 
         //draw imgui
 #define useImGUI
 #ifdef useImGUI
-                //draw ImGui window
-        ImGui::Begin("Settings");
-        ImGui::Checkbox("Draw Castle", &drawCastle);
-        ImGui::Checkbox("Draw Ocean", &drawOcean);
-        ImGui::Checkbox("Draw Skybox", &drawSkybox);
-        ImGui::SliderFloat("Fog Start", &fogStart, 0.0f, 100.0f);
-        ImGui::SliderFloat("Fog End", &fogEnd, 0.0f, 100.0f);
-        ImGui::ColorEdit4("Fog Color", fogColor);
-        ImGui::ColorEdit4("Light Color", lightColor);
-        ImGui::Checkbox("Time of Day", &timeOfDay);
-        if (timeOfDay) {
-            ImGui::Indent(32.0f);
-            ImGui::Checkbox("AutoTime", &AutoTime);
-            if (AutoTime) {
-                ImGui::Indent(32.0f);
-                ImGui::SliderFloat("timestep", &timestep, 0.0f, 1.0f);
-                ImGui::Unindent(32.0f);
-            }
-            ImGui::SliderFloat("Time", &time, 0.0f, 24.0f);
-            ImGui::Unindent(32.0f);
-        }
-        ImGui::End();
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        if (AutoTime) {
-            time += timestep;
-            time = fmod(time, 24.0f);
+        ImguiHelper::render();
+
+        if (ImguiHelper::AutoTime) {
+            ImguiHelper::time += ImguiHelper::timestep;
+            ImguiHelper::time = fmod(ImguiHelper::time, 24.0f);
         }
-        if (timeOfDay) {
+        if (ImguiHelper::timeOfDay) {
             //calculate values based on the time of day
-            lightLevel = glm::vec3(glm::clamp((1.0f / 2.0f) * (sin((M_PI / 12.0f) * (time)-(14.0f / 24.0f) * M_PI)) + 0.6f, 0.0, 0.9));
+            lightLevel = glm::vec3(glm::clamp((1.0f / 2.0f) * (sin((M_PI / 12.0f) * (ImguiHelper::time)-(14.0f / 24.0f) * M_PI)) + 0.6f, 0.0, 0.9));
             glm::vec3 light_col;
-            if (time <= 6 || time >= 18) {
+            if (ImguiHelper::time <= 6 || ImguiHelper::time >= 18) {
                 //blend night with sunup/down
-                float delta = (time <= 6) ? time + 6 : (time - 18);
+                float delta = (ImguiHelper::time <= 6) ? ImguiHelper::time + 6 : (ImguiHelper::time - 18);
                 glm::vec3 other = RGB(240.0f, 160.0f, 22.0f);
                 float sun = glm::clamp((float)((1.0f / 2.0f) * (cos((M_PI / 6.0f) * (delta)) + 0.6)), 0.0f, 1.0f) * (0.15f);
                 light_col = glm::mix(lightLevel, other, sun);
@@ -912,18 +908,18 @@ int main()
             else {
                 // time > 6 time < 18
                 //blend sunup/sundown with mid day
-                float delta = time - 6;
+                float delta = ImguiHelper::time - 6;
                 glm::vec3 other = RGB(240.0f, 160.0f, 22.0f);
                 float sun = glm::clamp((float)((1.0f / 2.0f) * (cos((M_PI / 6.0f) * (delta)) + 0.6)), 0.0f, 1.0f) * (0.15f);
                 light_col = glm::mix(lightLevel, other, sun);
             }
-            lightColor[0] = light_col[0];
-            lightColor[1] = light_col[1];
-            lightColor[2] = light_col[2];
-            skybox_color = glm::vec4(glm::vec3(lightColor[0], lightColor[1], lightColor[2]), 1.0f);
-            fogColor[0] = light_col[0];
-            fogColor[1] = light_col[1];
-            fogColor[2] = light_col[2];
+            ImguiHelper::lightColor[0] = light_col[0];
+            ImguiHelper::lightColor[1] = light_col[1];
+            ImguiHelper::lightColor[2] = light_col[2];
+            skybox_color = glm::vec4(glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]), 1.0f);
+            ImguiHelper::fogColor[0] = light_col[0];
+            ImguiHelper::fogColor[1] = light_col[1];
+            ImguiHelper::fogColor[2] = light_col[2];
 
             // set light direction (determined by light "position")
             // the light revolves around the scene in a (large) circle given by the equation
@@ -931,8 +927,8 @@ int main()
             //     : where z is a constant and x,y change depending on time
             float radius = 1.0f;
             lightPos = glm::vec3(
-                radius * (cos((M_PI / 12.0f) * (time)-(14.0f / 24.0f) * M_PI)),     // x coordinate
-                radius * (sin((M_PI / 12.0f) * (time)-(14.0f / 24.0f) * M_PI)),     // y coordinate 
+                radius * (cos((M_PI / 12.0f) * (ImguiHelper::time)-(14.0f / 24.0f) * M_PI)),     // x coordinate
+                radius * (sin((M_PI / 12.0f) * (ImguiHelper::time)-(14.0f / 24.0f) * M_PI)),     // y coordinate 
                 lightPos[2]                                                    // z coordinate
             );
         }
@@ -950,9 +946,7 @@ int main()
     glDeleteBuffers(1, &planeVBO);
 
     ////end imgui
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    ImguiHelper::shutdown();
 
 
     glfwTerminate();

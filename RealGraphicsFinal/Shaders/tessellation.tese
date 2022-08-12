@@ -12,19 +12,15 @@ uniform mat4 projection;      // the projection matrix
 
 // received from Tessellation Control Shader - all texture coordinates for the patch vertices
 in vec2 TextureCoord[];
-//in vec4 tescPosition[];
+in vec4 tescPosition[];
 
-out vec4 positions[];
+out vec4 position;
 
 // send to Fragment Shader for coloring
 out float Height;
 
 void main()
 {
-    //position[0] = tescPosition[0];
-    //position[1] = tescPosition[1];
-    //position[2] = tescPosition[2];
-    //position[3] = tescPosition[3];
 
     // get patch coordinate
     float u = gl_TessCoord.x;
@@ -52,11 +48,6 @@ void main()
     vec4 p10 = gl_in[2].gl_Position;
     vec4 p11 = gl_in[3].gl_Position;
 
-    positions[0] = p00;
-    positions[1] = p01;
-    positions[2] = p10;
-    positions[3] = p11;
-
     // compute patch surface normal
     vec4 uVec = p01 - p00;
     vec4 vVec = p10 - p00;
@@ -73,5 +64,6 @@ void main()
     // ----------------------------------------------------------------------
     // output patch point position in clip space
     gl_Position = projection * view * model * p;
+    position = model * p;
 }
 	
