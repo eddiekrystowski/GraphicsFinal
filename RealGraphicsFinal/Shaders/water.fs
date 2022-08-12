@@ -23,26 +23,32 @@ uniform vec3 lightColor;
 uniform float near;
 uniform float far;
 
-const vec4 mudColor = vec4(0.29, 0.27, 0.19, 0.5);
 out vec4 outColor;
 
 void main() {
+	// calculate texture coordinates based on ndc coordinates
 	vec2 normalizedDeviceCoord = (In.worldPosition.xy / In.worldPosition.w) / 2.0 + 0.5;
 	vec2 reflectionTextureCoord = vec2(normalizedDeviceCoord.x, -normalizedDeviceCoord.y);
 	vec2 refractionTextureCoord = vec2(normalizedDeviceCoord.x, normalizedDeviceCoord.y);
 
+	// calculate distance from object to clipping plane
 	float terrainDepth = texture(depthSampler, refractionTextureCoord).r;
 	float terrainDistance = 2.0 * near * far / (far + near - (2.0 * terrainDepth - 1.0) * (far - near));
 
+	//calculate depth
 	float fragmentDepth = gl_FragCoord.z;
 	float fragmentDistance = 2.0 * near * far / (far + near - (2.0 * fragmentDepth - 1.0) * (far - near));
 
+	//calculate water depth
 	float waterDepth = terrainDistance - fragmentDistance;
 
+	//distort water dudv (surface)
 	vec2 distortedTexCoords = texture(dudvSampler, vec2(In.textureCoord.x + moveFactor, In.textureCoord.y)).rg * 0.1;
 	distortedTexCoords = In.textureCoord + vec2(distortedTexCoords.x, distortedTexCoords.y + moveFactor);
+	// have to multiply * 2 - 1 here to get range -1 to 1 (ndc)
 	vec2 totalDistortion = (texture(dudvSampler, distortedTexCoords).rg * 2.0 - 1.0) * distorsionStrength * clamp(waterDepth / 20.0, 0.0, 1.0);
 
+	//update reflection and refraction tex coords based on distortion
 	refractionTextureCoord += totalDistortion;
 	refractionTextureCoord = clamp(refractionTextureCoord, 0.001, 0.999);
 
@@ -52,12 +58,14 @@ void main() {
 
 	vec4 reflectColor = texture(reflectionSampler, reflectionTextureCoord);
 	vec4 refractColor = texture(refractionSampler, refractionTextureCoord);
-	refractColor = mix(refractColor, mudColor, clamp(waterDepth / 60.0, 0.0, 1.0));
 
+
+	// calculate normal
 	vec4 normalMapColor = texture(normalSampler, distortedTexCoords);
 	vec3 normal = vec3(normalMapColor.r * 2.0 - 1.0, normalMapColor.b * 3.0, normalMapColor.g * 2.0 - 1.0);
 	normal = normalize(normal);
 
+	//fresnel effect
 	vec3 viewVector = normalize(In.toCamera);
 	float refractiveFactor = dot(viewVector, normal);
 	refractiveFactor = pow(refractiveFactor, 0.5);
@@ -68,6 +76,7 @@ void main() {
 	specular = pow(specular, specularPower);
 	vec3 specularHighlights = lightColor * specular * 0.5;
 
+	//finally mix together
 	outColor = mix(reflectColor, refractColor, refractiveFactor);
 	outColor = mix(outColor, vec4(0.0, 0.3, 0.5, 1.0), 0.2) + vec4(specularHighlights, 0);
 	outColor.a = clamp(waterDepth / 5.0, 0.0, 1.0);

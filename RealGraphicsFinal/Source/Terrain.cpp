@@ -98,8 +98,6 @@ void Terrain::Render(Camera* camera) {
 
     shader->use();
 
-    std::cout << "Rendering terrain" << std::endl;
-
     // view/projection transformations
     glm::mat4 projection = camera->GetProjectionMatrix();//  glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
     glm::mat4 view = camera->GetViewMatrix();
@@ -109,6 +107,7 @@ void Terrain::Render(Camera* camera) {
 
     // world transformation
     glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0, -16, 0));
     shader->setMat4("model", model);
 
 
@@ -120,7 +119,6 @@ void Terrain::Render(Camera* camera) {
     glBindVertexArray(VAO);
 
     glDrawArrays(GL_PATCHES, 0, 4 * Terrain::resolution * Terrain::resolution);
-    std::cout << "done rendering terrain" << std::endl;
 }
 
 

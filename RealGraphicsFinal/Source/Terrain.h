@@ -5,6 +5,8 @@
 #include "Camera.h"
 #include "shader_s.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 class Terrain {
 public:
 	unsigned int VAO;

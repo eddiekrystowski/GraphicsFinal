@@ -21,7 +21,7 @@ void Camera::InitViewMatrix() {
 	worldUp = glm::vec3(0, 1, 0);
 	yaw = -90.0f;
 	pitch = 0.0f;
-	MovementSpeed = 50.0f;
+	MovementSpeed = 35.0f;
 	MouseSensitivity = 0.1f;
 	UpdateVectors();
 }

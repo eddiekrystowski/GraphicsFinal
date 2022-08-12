@@ -1680,7 +1680,7 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
+    glm::vec3 cubePos = glm::vec3(0, 2, 0);
 
     glm::vec3 cameraPos = camera->GetPosition();
     float pitch = camera->GetPitch();
@@ -1691,14 +1691,14 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     camera->SetPosition(cameraPos);
     camera->SetPitch(pitch);
 
-    waterFrameBuffer->BindRefractionBuffer();
+    waterFrameBuffer->BindReflectionBuffer();
     waterFrameBuffer->Clear();
     //enable clip plane
     terrain->Render(camera);
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, 1, 0, 0));
     glm::mat4 model = glm::mat4(1.0);
-    model = glm::translate(model, glm::vec3(0, -2, 0));
+    model = glm::translate(model, cubePos);
     shader->setFloat("textureTiling", 1);
     shader->setVec3("directionalLight.color", Light::color);
     shader->setFloat("directionalLight.intensity", Light::intensity);
@@ -1708,7 +1708,6 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     shader->setMat4("gWorld", model);
     shader->setInt("textureSampler", 0);
     renderCube(cubeTexture, true, glm::vec4(0, 1, 0, 0));
-    std::cout << "done rendering los cube" << std::endl;
     glUseProgram(0);
     //disable clip plane
     waterFrameBuffer->UnbindBuffer();
@@ -1733,7 +1732,7 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, -1, 0, 0));
     model = glm::mat4(1.0);
-    model = glm::translate(model, glm::vec3(0, -2, 0));
+    model = glm::translate(model, cubePos);
     shader->setFloat("textureTiling", 1);
     shader->setVec3("directionalLight.color", Light::color);
     shader->setFloat("directionalLight.intensity", Light::intensity);
@@ -1747,11 +1746,11 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     waterFrameBuffer->UnbindBuffer();
 
 
-    terrain->Render(camera);
+    terrain->Render(camera);    
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, 0, 0, 0));
     model = glm::mat4(1.0);
-    model = glm::translate(model, glm::vec3(0, -2, 0));
+    model = glm::translate(model, cubePos);
     shader->setFloat("textureTiling", 1);
     shader->setVec3("directionalLight.color", Light::color);
     shader->setFloat("directionalLight.intensity", Light::intensity);
