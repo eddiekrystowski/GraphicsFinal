@@ -1557,7 +1557,7 @@ int main()
     unsigned int grassAtlas = loadTexture("Textures/grass_atlas_noborder.png");
     unsigned int grassTexture = loadTexture("Textures/dirttexture.png");
     unsigned int dirtTexture = loadTexture("Textures/dirttexture.png");
-    unsigned int windMap = loadTexture("Textures/dirttexture.png");
+    unsigned int windMap = loadTexture("Textures/wind.jpg");
 
     Terrain* terrain = new Terrain("./Textures/hmap6.png");
 
@@ -1760,7 +1760,7 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     waterFrameBuffer->BindReflectionBuffer();
     waterFrameBuffer->Clear();
     //enable clip plane
-    terrain->Render(camera);
+    terrain->Render(camera, deltaTime);
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, 1, 0, 0));
     glm::mat4 model = glm::mat4(1.0);
@@ -1794,7 +1794,7 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     // Render the scene in the refraction buffer
     waterFrameBuffer->BindRefractionBuffer();
     waterFrameBuffer->Clear();
-    terrain->Render(camera);
+    terrain->Render(camera, deltaTime);
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, -1, 0, 0));
     model = glm::mat4(1.0);
@@ -1812,7 +1812,7 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     waterFrameBuffer->UnbindBuffer();
 
 
-    terrain->Render(camera);    
+    terrain->Render(camera, deltaTime);    
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, 0, 0, 0));
     model = glm::mat4(1.0);

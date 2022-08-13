@@ -113,7 +113,7 @@ void Terrain::SetWindMap(unsigned int windMap) {
     this->windMap = windMap;
 }
 
-void Terrain::Render(Camera* camera) {
+void Terrain::Render(Camera* camera, float deltaTime) {
     Shader* shader = this->shader;
 
     shader->use();
@@ -143,12 +143,12 @@ void Terrain::Render(Camera* camera) {
 
     glDrawArrays(GL_PATCHES, 0, 4 * Terrain::resolution * Terrain::resolution);
 
-    DrawGrass(camera);
+    DrawGrass(camera, deltaTime);
 
 }
 
 
-void Terrain::DrawGrass(Camera* camera) {
+void Terrain::DrawGrass(Camera* camera, float deltaTime) {
 
     grassShader->use();
     grassShader->setFloat("time", glfwGetTime());

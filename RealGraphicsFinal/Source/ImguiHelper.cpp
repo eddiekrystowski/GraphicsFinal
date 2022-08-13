@@ -40,7 +40,7 @@ bool ImguiHelper::drawFlower3 = true;
 bool ImguiHelper::drawFlower4 = true;
 float ImguiHelper::min_grass_height = 0.5f;
 float ImguiHelper::grass_height_factor = 1.0f;
-float ImguiHelper::windspeed = 0.15;
+float ImguiHelper::windspeed = 0.15f;
 float ImguiHelper::windstrength = 0.15;
 bool ImguiHelper::showBackgrounds = false;
 

@@ -40,8 +40,8 @@ public:
 	void SetDirtTexture(unsigned int dirtTexture);
 	void SetWindMap(unsigned int windMap);
 
-	void Render(Camera* camera);
-	void DrawGrass(Camera* camera);
+	void Render(Camera* camera, float deltaTime);
+	void DrawGrass(Camera* camera, float deltaTime);
 
 	static unsigned int LoadHeightmap(const char* heightmapPath, int* width, int* height);
 
