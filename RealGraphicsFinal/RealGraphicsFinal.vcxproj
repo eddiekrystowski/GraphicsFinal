@@ -136,6 +136,7 @@
   <ItemGroup>
     <ClCompile Include="Source\Light.cpp" />
     <ClCompile Include="Source\Camera.cpp" />
+    <ClCompile Include="Source\ImguiHelper.cpp" />
     <ClCompile Include="Source\ImGUI\imgui.cpp" />
     <ClCompile Include="Source\ImGUI\imgui_demo.cpp" />
     <ClCompile Include="Source\ImGUI\imgui_draw.cpp" />
@@ -176,9 +177,12 @@
     <None Include="Shaders\water.fs" />
     <None Include="Shaders\water.vs" />
     <None Include="Source\ImGUI\imgui.ini" />
+    <None Include="treeShader.fs" />
+    <None Include="treeShader.vs" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Light.h" />
+    <ClInclude Include="Source\ImguiHelper.h" />
     <ClInclude Include="Source\Camera.h" />
     <ClInclude Include="Source\Mesh.h" />
     <ClInclude Include="Source\Model.h" />

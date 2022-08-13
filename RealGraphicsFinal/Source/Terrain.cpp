@@ -93,6 +93,26 @@ void Terrain::SetShader(Shader* shader) {
     this->shader = shader;
 }
 
+void Terrain::SetGrassShader(Shader* grassShader) {
+    this->grassShader = grassShader;
+}
+
+void Terrain::SetGrassAtlas(unsigned int grassAtlas) {
+    this->grassAtlas = grassAtlas;
+}
+
+void Terrain::SetGrassTexture(unsigned int grassTexture) {
+    this->grassTexture = grassTexture;
+}
+
+void Terrain::SetDirtTexture(unsigned int dirtTexture) {
+    this->dirtTexture = dirtTexture;
+}
+
+void Terrain::SetWindMap(unsigned int windMap) {
+    this->windMap = windMap;
+}
+
 void Terrain::Render(Camera* camera) {
     Shader* shader = this->shader;
 
@@ -105,22 +125,77 @@ void Terrain::Render(Camera* camera) {
     shader->setMat4("projection", projection);
     shader->setMat4("view", view);
 
-    // world transformation
+    //// world transformation
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0, -16, 0));
+    model = glm::translate(model, glm::vec3(0, -16, 0)); // was -16
     shader->setMat4("model", model);
-
+    shader->setFloat("water_level", 0.0f);
 
     // render the terrain
     glActiveTexture(GL_TEXTURE0);
-
     glBindTexture(GL_TEXTURE_2D, heightmap); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, dirtTexture);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, grassTexture);
 
     glBindVertexArray(VAO);
 
     glDrawArrays(GL_PATCHES, 0, 4 * Terrain::resolution * Terrain::resolution);
+
+    DrawGrass(camera);
+
 }
 
+
+void Terrain::DrawGrass(Camera* camera) {
+
+    grassShader->use();
+    grassShader->setFloat("time", glfwGetTime());
+    //settings from imgui
+    grassShader->setBool("useWind", ImguiHelper::wind);
+    grassShader->setBool("useMultipleTextures", ImguiHelper::multipleTextures);
+    grassShader->setFloat("windspeed", ImguiHelper::windspeed);
+    grassShader->setFloat("min_grass_height", ImguiHelper::min_grass_height);
+    grassShader->setFloat("grass_height_factor", ImguiHelper::grass_height_factor);
+    grassShader->setFloat("grass1_density", ImguiHelper::grass1_density);
+    grassShader->setFloat("grass2_density", ImguiHelper::grass2_density);
+    grassShader->setFloat("grass3_density", ImguiHelper::grass3_density);
+    grassShader->setFloat("grass4_density", ImguiHelper::grass4_density);
+    grassShader->setFloat("flower1_density", ImguiHelper::flower1_density);
+    grassShader->setFloat("flower2_density", ImguiHelper::flower2_density);
+    grassShader->setFloat("flower3_density", ImguiHelper::flower3_density);
+    grassShader->setFloat("flower4_density", ImguiHelper::flower4_density);
+    grassShader->setBool("drawGrass1", ImguiHelper::drawGrass1);
+    grassShader->setBool("drawGrass2", ImguiHelper::drawGrass2);
+    grassShader->setBool("drawGrass3", ImguiHelper::drawGrass3);
+    grassShader->setBool("drawGrass4", ImguiHelper::drawGrass4);
+    grassShader->setBool("drawFlower1", ImguiHelper::drawFlower1);
+    grassShader->setBool("drawFlower2", ImguiHelper::drawFlower2);
+    grassShader->setBool("drawFlower3", ImguiHelper::drawFlower3);
+    grassShader->setBool("drawFlower4", ImguiHelper::drawFlower4);
+    grassShader->setBool("showBackgrounds", ImguiHelper::showBackgrounds);
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, -16.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(2.0f));	// it's a bit too big for our scene, so scale it down
+    grassShader->setMat4("model", model);
+    grassShader->setMat4("projection", camera->GetProjectionMatrix());
+    grassShader->setMat4("view", camera->GetViewMatrix());
+    grassShader->setFloat("water_level", 0.0f);
+
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, grassAtlas);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, windMap);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, heightmap);
+    //generatePlanes(40, tessHeightMapGrassShader, true);
+
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_PATCHES, 0, 4 * Terrain::resolution * Terrain::resolution);
+}
 
 
 
