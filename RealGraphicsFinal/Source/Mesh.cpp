@@ -12,9 +12,13 @@ Mesh::Mesh(std::vector<Vertex> aVertices, std::vector<unsigned int> aIndices, st
 	configure();
 }
 
+Mesh::Mesh(std::vector<Vertex> aVertices, std::vector<unsigned int> aIndices) {
+	this->vertices = aVertices;
+	this->indices = aIndices;
+	configure();
+}
+
 void Mesh::configure() {
-	//glGenVertexArrays(1, &grassVAO);
-	//glGenBuffers(1, &grassVBO);
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
@@ -26,6 +30,7 @@ void Mesh::configure() {
 	glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	this->num_indices = indices.size();
 	//buffer index data
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 

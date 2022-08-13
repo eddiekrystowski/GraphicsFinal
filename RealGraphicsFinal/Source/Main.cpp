@@ -34,6 +34,9 @@
 #include "Texture.h"
 #include "Vertex.h"
 #include "Model.h"
+#include "Water.h"
+#include "Light.h"
+#include "Terrain.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -42,7 +45,35 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#define final_project
+//settings for imgui
+bool renderGrass = true;
+bool drawGround = true;
+bool wind = true;
+bool multipleTextures = true;
+float grass1_density = 0.33;
+float grass2_density = 0.33;
+float grass3_density = 0.33;
+float grass4_density = 0.11;
+float flower1_density = 0.02;
+float flower2_density = 0.02;
+float flower3_density = 0.03;
+float flower4_density = 0.03;
+bool drawGrass1 = true;
+bool drawGrass2 = true;
+bool drawGrass3 = true;
+bool drawGrass4 = true;
+bool drawFlower1 = true;
+bool drawFlower2 = true;
+bool drawFlower3 = true;
+bool drawFlower4 = true;
+float min_grass_height = 0.5f;
+float grass_height_factor = 1.0f;
+float windspeed = 0.15;
+float windstrength = 0.15;
+bool showBackgrounds = false;
+
+//#define final_project
+//#define final_project
 #ifdef final_project
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -59,7 +90,8 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(67.0f, 20.0f, 169.9f), glm::vec3(0.0f, 1.0f, 0.0f), -128.1f, -42.4f);
+Camera* camera = new Camera(Projection::Perspective, 45, (float) SCR_WIDTH / SCR_HEIGHT);
+//Camera camera(glm::vec3(67.0f, 20.0f, 169.9f), glm::vec3(0.0f, 1.0f, 0.0f), -128.1f, -42.4f);
 float lastX = (float)SCR_WIDTH / 2.0;
 float lastY = (float)SCR_HEIGHT / 2.0;
 bool firstMouse = true;
@@ -81,8 +113,8 @@ glm::vec3 RGB(float v0, float v1, float v2) {
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-        camera.pause();
-        if (camera.paused) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        camera->pause();
+        if (camera->paused) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
 }
@@ -302,6 +334,9 @@ int main()
         return -1;
     }
 
+    WaterFrameBuffer* waterFrameBuffer = new WaterFrameBuffer();
+
+
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
@@ -312,14 +347,16 @@ int main()
 
     // build and compile shaders
     // -------------------------
-    Shader shader("./Shaders/directional.vs", "./Shaders/directional.fs", nullptr, nullptr, nullptr);
-    Shader simpleDepthShader("./Shaders/depthShader.vs", "./Shaders/depthShader.fs", nullptr, nullptr, nullptr);
-    Shader debugDepthQuad("./Shaders/debug_quad.vs", "./Shaders/debug_quad.fs", nullptr, nullptr, nullptr);
-    Shader skyboxShader("./Shaders/skybox.vs", "./Shaders/skybox.fs", nullptr, nullptr, nullptr);
-    Shader grassShader("./Shaders/grass.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", nullptr, nullptr);
-    Shader tessHeightMapShader("./Shaders/passthrough.vs", "./Shaders/terrain.fs", nullptr, "./Shaders/tessellation_ground.tesc", "./Shaders/tessellation_ground.tese");
-    Shader tessHeightMapGrassShader("./Shaders/passthrough.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", "./Shaders/tessellation.tesc", "./Shaders/tessellation.tese");
-    Shader treeShader("./Shaders/treeShader.vs", "./Shaders/treeShader.fs", nullptr, nullptr, nullptr);
+    Shader* shader = new Shader("./Shaders/directional.vs", "./Shaders/directional.fs", nullptr, nullptr, nullptr);
+    Shader* simpleDepthShader = new Shader("./Shaders/depthShader.vs", "./Shaders/depthShader.fs", nullptr, nullptr, nullptr);
+    Shader* debugDepthQuad = new Shader("./Shaders/debug_quad.vs", "./Shaders/debug_quad.fs", nullptr, nullptr, nullptr);
+    Shader* skyboxShader = new Shader("./Shaders/skybox.vs", "./Shaders/skybox.fs", nullptr, nullptr, nullptr);
+    Shader* grassShader = new Shader("./Shaders/grass.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", nullptr, nullptr);
+    Shader* tessHeightMapShader = new Shader("./Shaders/passthrough.vs", "./Shaders/terrain.fs", nullptr, "./Shaders/tessellation_ground.tesc", "./Shaders/tessellation_ground.tese");
+    Shader* tessHeightMapGrassShader = new Shader("./Shaders/passthrough.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", "./Shaders/tessellation.tesc", "./Shaders/tessellation.tese");
+    Shader* treeShader = new Shader("./Shaders/treeShader.vs", "./Shaders/treeShader.fs", nullptr, nullptr, nullptr);
+    Shader* waterShader = new Shader("./Shaders/water.vs", "./Shaders/water.fs");
+
 
     // tree positions
     glm::vec3 treePositions[50] = {
@@ -554,7 +591,8 @@ int main()
     // load textures
     // -------------
     stbi_set_flip_vertically_on_load(true);
-    unsigned int woodTexture = loadTexture("./Textures/JC-OceanBlue.jpg");
+    //unsigned int woodTexture = loadTexture("./Textures/JC-OceanBlue.jpg");
+    unsigned int 
     unsigned int grass_texture = loadTexture("./Textures/grass_atlas_noborder.png");
     unsigned int wind_map = loadTexture("./Textures/wind.jpg");
     unsigned int dirt = loadTexture("./Textures/dirttexture.png");
@@ -611,6 +649,12 @@ int main()
     glm::vec3 lightLevel(1.0f, 1.0f, 1.0f);
     glm::vec4 skybox_color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
+
+    Mesh* waterMesh = Water::GenerateMesh(glm::vec2(256.0f, 256.0f));
+    Shader* waterShader = new Shader("./Shaders/water.vs", "./Shaders/water.fs");
+
+
+
     //setup IMGUI
     ImguiHelper::setup(window);
 
@@ -655,18 +699,27 @@ int main()
         glBindTexture(GL_TEXTURE_2D, woodTexture);
         //glCullFace(GL_FRONT);
         renderScene(simpleDepthShader, rhinocer, tree);
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(- width / 2, 0, -height / 2));
+       //model = glm::scale(model, glm::vec3(10.0f, 1.0f, 10.0f));
+        glCheckError();
+
+        simpleDepthShader.setMat4("model", model);
+        glCheckError();
+
+        waterMesh->draw(simpleDepthShader);
         glCheckError();
 
         tessHeightMapShader.use();
 
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
-        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projection = camera->GetProjectionMatrix();//  glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
+        glm::mat4 view = camera->GetViewMatrix();
         tessHeightMapShader.setMat4("projection", projection);
         tessHeightMapShader.setMat4("view", view);
 
         // world transformation
-        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::mat4(1.0f);
         tessHeightMapShader.setMat4("model", model);
 
 
@@ -702,12 +755,12 @@ int main()
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader.use();
-        glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        camera.GetViewMatrix();
+        projection = camera->GetProjectionMatrix();//glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        view = camera->GetViewMatrix();
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         // set light uniforms
-        shader.setVec3("viewPos", camera.Position);
+        shader.setVec3("viewPos", camera->GetPosition());
         //shader.setVec3("lightPos", lightPos);
         shader.setVec3("dir_light.direction", -lightPos);
         shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
@@ -777,11 +830,19 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, depthMap);
         renderScene(shader, rhinocer, tree);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-width / 2, 0, -height / 2));
+        //model = glm::scale(model, glm::vec3(10.0f, 1.0f, 10.0f));
+        shader.setMat4("model", model);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, woodTexture);
+        waterMesh->draw(shader);
+
         tessHeightMapShader.use();
 
         // view/projection transformations
-        projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
-        view = camera.GetViewMatrix();
+        projection = camera->GetProjectionMatrix();// glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
+        view = camera->GetViewMatrix();
         tessHeightMapShader.setMat4("projection", projection);
         tessHeightMapShader.setMat4("view", view);
 
@@ -868,12 +929,12 @@ int main()
         //draw skybox as last
         glDepthFunc(GL_LEQUAL); // need LEQUAL instead of LESS
         skyboxShader.use();
-        view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // undo translation
+        view = glm::mat4(glm::mat3(camera->GetViewMatrix())); // undo translation
         view = glm::scale(view, glm::vec3(500));
         skyboxShader.setMat4("view", view);
         skyboxShader.setMat4("projection", projection);
         skyboxShader.setVec4("color", skybox_color);
-        skyboxShader.setVec3("viewPos", camera.Position);
+        skyboxShader.setVec3("viewPos", camera->GetPosition());
         skyboxShader.setFloat("fogStart", ImguiHelper::fogStart);
         skyboxShader.setFloat("fogEnd", ImguiHelper::fogEnd);
         skyboxShader.setVec4("fogColor", ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]);
@@ -963,7 +1024,8 @@ void renderScene(Shader& shader, Model rhinocer, Model tree)
     model = glm::scale(model, glm::vec3(10.0f, 1.0f, 10.0f));
     shader.setMat4("model", model);
     glBindVertexArray(planeVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    //glDrawArrays(GL_TRIANGLES, 0, 6);
+    // 
     // cubes
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
@@ -1106,20 +1168,20 @@ void processInput(GLFWwindow* window)
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(UP, deltaTime);
+            camera->ProcessKeyboard(UP, deltaTime);
         else
-            camera.ProcessKeyboard(FORWARD, deltaTime);
+            camera->ProcessKeyboard(FORWARD, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(DOWN, deltaTime);
+            camera->ProcessKeyboard(DOWN, deltaTime);
         else
-            camera.ProcessKeyboard(BACKWARD, deltaTime);
+            camera->ProcessKeyboard(BACKWARD, deltaTime);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
+        camera->ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+        camera->ProcessKeyboard(RIGHT, deltaTime);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -1150,14 +1212,716 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+    camera->ProcessMouseMovement(xoffset, yoffset);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
+    camera->ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+// utility function for loading a 2D texture from file
+// ---------------------------------------------------
+unsigned int loadTexture(char const* path)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum format;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT); // for this tutorial: use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes texels from next repeat 
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cout << "Texture failed to load at path:" << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
+}
+
+unsigned int loadHeightmap(char const* path, int* width, int* height) {
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load image, create texture and generate mipmaps
+    int nrChannels;
+    std::cout << "here" << std::endl;
+    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+    stbi_us* data = stbi_load_16(path, width, height, &nrChannels, 4);
+    std::cout << "here2" << std::endl;
+    if (data)
+    {
+        std::cout << "here3" << std::endl;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, *width, *height, 0, GL_RGBA, GL_UNSIGNED_SHORT, data); // Notice GL_UNSIGNED_SHORT
+        std::cout << "here4" << std::endl;
+
+        //glGenerateMipmap(GL_TEXTURE_2D);
+        std::cout << "Loaded heightmap of size " << *height << " x " << *width << std::endl;
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    return texture;
+}
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+
+
+
+
+
+
+
+
+
+
+
+
+#define watertest
+#ifdef watertest
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void processInput(GLFWwindow* window);
+unsigned int loadTexture(const char* path); 
+
+// settings
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
+// camera
+Camera* camera = new Camera(Projection::Perspective, 45, (float) (SCR_WIDTH / (float) SCR_HEIGHT));
+float lastX = (float)SCR_WIDTH / 2.0;
+float lastY = (float)SCR_HEIGHT / 2.0;
+bool firstMouse = true;
+
+// timing
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+        //camera.pause();
+        //if (camera.paused) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        //else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+}
+
+void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
+    GLenum severity, GLsizei length,
+    const GLchar* msg, const void* data)
+{
+    const char* _source;
+    const char* _type;
+    const char* _severity;
+
+    switch (source) {
+    case GL_DEBUG_SOURCE_API:
+        _source = "API";
+        break;
+
+    case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+        _source = "WINDOW SYSTEM";
+        break;
+
+    case GL_DEBUG_SOURCE_SHADER_COMPILER:
+        _source = "SHADER COMPILER";
+        break;
+
+    case GL_DEBUG_SOURCE_THIRD_PARTY:
+        _source = "THIRD PARTY";
+        break;
+
+    case GL_DEBUG_SOURCE_APPLICATION:
+        _source = "APPLICATION";
+        break;
+
+    case GL_DEBUG_SOURCE_OTHER:
+        _source = "UNKNOWN";
+        break;
+
+    default:
+        _source = "UNKNOWN";
+        break;
+    }
+
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR:
+        _type = "ERROR";
+        break;
+
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        _type = "DEPRECATED BEHAVIOR";
+        break;
+
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        _type = "UDEFINED BEHAVIOR";
+        break;
+
+    case GL_DEBUG_TYPE_PORTABILITY:
+        _type = "PORTABILITY";
+        break;
+
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        _type = "PERFORMANCE";
+        break;
+
+    case GL_DEBUG_TYPE_OTHER:
+        _type = "OTHER";
+        break;
+
+    case GL_DEBUG_TYPE_MARKER:
+        _type = "MARKER";
+        break;
+
+    default:
+        _type = "UNKNOWN";
+        break;
+    }
+
+    switch (severity) {
+    case GL_DEBUG_SEVERITY_HIGH:
+        _severity = "HIGH";
+        break;
+
+    case GL_DEBUG_SEVERITY_MEDIUM:
+        _severity = "MEDIUM";
+        break;
+
+    case GL_DEBUG_SEVERITY_LOW:
+        _severity = "LOW";
+        break;
+
+    case GL_DEBUG_SEVERITY_NOTIFICATION:
+        _severity = "NOTIFICATION";
+        break;
+
+    default:
+        _severity = "UNKNOWN";
+        break;
+    }
+
+    printf("%d: %s of %s severity, raised from %s: %s\n",
+        id, _type, _severity, _source, msg);
+}
+
+
+GLenum glCheckError_(const char* file, int line)
+{
+    GLenum errorCode;
+    while ((errorCode = glGetError()) != GL_NO_ERROR)
+    {
+        std::string error;
+        switch (errorCode)
+        {
+        case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
+        case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
+        case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
+        case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break;
+        case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break;
+        case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
+        }
+        std::cout << error << " | " << file << " (" << line << ")" << std::endl;
+    }
+    return errorCode;
+}
+#define glCheckError() glCheckError_(__FILE__, __LINE__) 
+
+
+void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain);
+void renderCube(unsigned int texture, bool clipPlaneEnabled, glm::vec4 clipPlane = glm::vec4(0, 0, 0, 0));
+
+int main()
+{
+    // glfw: initialize and configure
+    // ------------------------------
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+    // glfw window creation
+    // --------------------
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Final Project", NULL, NULL);
+    if (window == NULL)
+    {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+
+    // tell GLFW to capture our mouse
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    // glad: load all OpenGL function pointers
+    // ---------------------------------------
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
+    glDebugMessageCallback(GLDebugMessageCallback, NULL);
+
+    WaterFrameBuffer* waterFrameBuffer = new WaterFrameBuffer();
+
+    // build and compile shaders
+    // -------------------------
+    Shader* waterShader = new Shader("./Shaders/water.vs", "./Shaders/water.fs");
+    Shader* shader = new Shader("Shaders/Shader.vs", "Shaders/Shader.fs");
+    Shader* debugDepthQuad = new Shader("./Shaders/debug_quad.vs", "./Shaders/debug_quad.fs", nullptr, nullptr, nullptr);
+    Shader* tessHeightMapShader = new Shader("./Shaders/passthrough.vs", "./Shaders/terrain.fs", nullptr, "./Shaders/tessellation_ground.tesc", "./Shaders/tessellation_ground.tese");
+    Shader* tessHeightMapGrassShader = new Shader("./Shaders/passthrough.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", "./Shaders/tessellation.tesc", "./Shaders/tessellation.tese");
+    
+
+    tessHeightMapGrassShader->use();
+    tessHeightMapGrassShader->setInt("grass_texture", 0);
+    tessHeightMapGrassShader->setInt("windMap", 1);
+    tessHeightMapGrassShader->setInt("heightMap", 2);
+    tessHeightMapShader->use();
+    tessHeightMapShader->setInt("heightMap", 0);
+    tessHeightMapShader->setInt("dirtTexture", 1);
+    tessHeightMapShader->setInt("grassTexture", 2);
+    glUseProgram(0);
+
+    // load textures
+    // -------------
+    stbi_set_flip_vertically_on_load(true);
+    unsigned int waterDudv = loadTexture("Textures/dudv.png");
+    unsigned int waterNormal = loadTexture("Textures/normal.png");
+    unsigned int grassAtlas = loadTexture("Textures/grass_atlas_noborder.png");
+    unsigned int grassTexture = loadTexture("Textures/dirttexture.png");
+    unsigned int dirtTexture = loadTexture("Textures/dirttexture.png");
+    unsigned int windMap = loadTexture("Textures/dirttexture.png");
+
+    Terrain* terrain = new Terrain("./Textures/hmap6.png");
+
+    terrain->SetShader(tessHeightMapShader);
+    terrain->SetGrassShader(tessHeightMapGrassShader);
+    terrain->SetGrassAtlas(grassAtlas);
+    terrain->SetGrassTexture(grassTexture);
+    terrain->SetDirtTexture(dirtTexture);
+    terrain->SetWindMap(windMap);
+
+
+    Mesh* waterMesh = Water::GenerateMesh(glm::vec2(256.0f, 256.0f));
+
+
+    Water* water = new Water();
+    water->SetMesh(waterMesh);
+    water->SetShader(waterShader);
+    water->SetDUDV(waterDudv);
+    water->SetNormal(waterNormal);
+    water->textureTiling = 4;
+    water->distorsionStrength = 0.04f;
+
+    waterShader->use();
+    waterShader->setInt("reflectionSampler", 0);
+    waterShader->setInt("refractionSampler", 1);
+    waterShader->setInt("dudvSampler", 2);
+    waterShader->setInt("normalSampler", 3);
+    waterShader->setInt("depthSampler", 4);
+
+    debugDepthQuad->use();
+    debugDepthQuad->setInt("depthMap", 0);
+    tessHeightMapShader->use();
+    tessHeightMapShader->setInt("heightMap", 0);
+    glUseProgram(0);
+
+    
+
+    // lighting info
+    // -------------
+    glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
+
+    // initialize settings
+    // -----------
+
+
+
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
+
+    while (!glfwWindowShouldClose(window))
+    {
+        // per-frame time logic
+        // --------------------
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        // input
+        // -----
+        processInput(window);
+
+        //waterMesh->draw(shader);
+
+
+        // render
+        // ------
+
+        glClearColor(0.5f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+       
+
+        renderScene(shader, waterDudv, waterFrameBuffer, water, terrain);
+
+        glCheckError();
+
+        //renderScene(shader, waterDudv, waterFrameBuffer);
+
+        water->Update(deltaTime);
+
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        // -------------------------------------------------------------------------------
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // optional: de-allocate all resources once they've outlived their purpose:
+    // ------------------------------------------------------------------------
+
+    ////end imgui
+
+
+    glfwTerminate();
+    return 0;
+}
+
+// renderCube() renders a 1x1 3D cube in NDC.
+// -------------------------------------------------
+unsigned int cubeVAO = 0;
+unsigned int cubeVBO = 0;
+void renderCube(unsigned int texture, bool clipPlaneEnabled, glm::vec4 clipPlane)
+{
+
+    if (clipPlaneEnabled) {
+        glEnable(GL_CLIP_DISTANCE0);
+    }
+    else {
+        glDisable(GL_CLIP_DISTANCE0);
+    }
+    // initialize (if necessary)
+    if (cubeVAO == 0)
+    {
+        float vertices[] = {
+            // back face
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+             1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+            -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+            // front face
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+             1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+            -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+            // left face
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+            -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+            // right face
+             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+             1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+             1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+            // bottom face
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+             1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+             1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+             1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+            -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+            // top face
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+             1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+             1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+             1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+            -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+        };
+        glGenVertexArrays(1, &cubeVAO);
+        glGenBuffers(1, &cubeVBO);
+        // fill buffer
+        glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        // link vertex attributes
+        glBindVertexArray(cubeVAO);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    
+    // render Cube
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain) {
+
+    glm::vec3 skyColor = glm::vec3(0.815f, 0.925f, 0.992f);
+    glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glm::vec3 cubePos = glm::vec3(0, 2, 0);
+
+    glm::vec3 cameraPos = camera->GetPosition();
+    float pitch = camera->GetPitch();
+
+    //move camera underneath
+    cameraPos.y *= -1;
+    pitch *= -1;
+    camera->SetPosition(cameraPos);
+    camera->SetPitch(pitch);
+
+    waterFrameBuffer->BindReflectionBuffer();
+    waterFrameBuffer->Clear();
+    //enable clip plane
+    terrain->Render(camera);
+    shader->use();
+    shader->setVec4("clipPlane", glm::vec4(0, 1, 0, 0));
+    glm::mat4 model = glm::mat4(1.0);
+    model = glm::translate(model, cubePos);
+    shader->setFloat("textureTiling", 1);
+    shader->setVec3("directionalLight.color", Light::color);
+    shader->setFloat("directionalLight.intensity", Light::intensity);
+    shader->setVec3("directionalLight.direction", Light::direction);
+    shader->setMat4("gProj", camera->GetProjectionMatrix());
+    shader->setMat4("gCamera", camera->GetViewMatrix());
+    shader->setMat4("gWorld", model);
+    shader->setInt("textureSampler", 0);
+    renderCube(cubeTexture, true, glm::vec4(0, 1, 0, 0));
+    glUseProgram(0);
+    //disable clip plane
+    waterFrameBuffer->UnbindBuffer();
+
+    //debugDepthQuad.use();
+    //debugDepthQuad.setFloat("near_plane", near_plane);
+    //debugDepthQuad.setFloat("far_plane", far_plane);
+    //glActiveTexture(GL_TEXTURE0);
+    //glBindTexture(GL_TEXTURE_2D, depthMap);
+    //renderQuad();
+
+    //move camera back
+    cameraPos.y *= -1;
+    pitch *= -1;
+    camera->SetPosition(cameraPos);
+    camera->SetPitch(pitch);
+
+    // Render the scene in the refraction buffer
+    waterFrameBuffer->BindRefractionBuffer();
+    waterFrameBuffer->Clear();
+    terrain->Render(camera);
+    shader->use();
+    shader->setVec4("clipPlane", glm::vec4(0, -1, 0, 0));
+    model = glm::mat4(1.0);
+    model = glm::translate(model, cubePos);
+    shader->setFloat("textureTiling", 1);
+    shader->setVec3("directionalLight.color", Light::color);
+    shader->setFloat("directionalLight.intensity", Light::intensity);
+    shader->setVec3("directionalLight.direction", Light::direction);
+    shader->setMat4("gProj", camera->GetProjectionMatrix());
+    shader->setMat4("gCamera", camera->GetViewMatrix());
+    shader->setMat4("gWorld", model);
+    shader->setInt("textureSampler", 0);
+    renderCube(cubeTexture, true, glm::vec4(0, -1, 0, 0));
+    glUseProgram(0);
+    waterFrameBuffer->UnbindBuffer();
+
+
+    terrain->Render(camera);    
+    shader->use();
+    shader->setVec4("clipPlane", glm::vec4(0, 0, 0, 0));
+    model = glm::mat4(1.0);
+    model = glm::translate(model, cubePos);
+    shader->setFloat("textureTiling", 1);
+    shader->setVec3("directionalLight.color", Light::color);
+    shader->setFloat("directionalLight.intensity", Light::intensity);
+    shader->setVec3("directionalLight.direction", Light::direction);
+    shader->setMat4("gProj", camera->GetProjectionMatrix());
+    shader->setMat4("gCamera", camera->GetViewMatrix());
+    shader->setMat4("gWorld", model);
+    shader->setInt("textureSampler", 0);
+    renderCube(cubeTexture, true, glm::vec4(0, -1, 0, 0));
+    glUseProgram(0);
+
+
+    water->Render(camera, waterFrameBuffer);
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
+// ---------------------------------------------------------------------------------------------------------
+void processInput(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            camera->ProcessKeyboard(UP, deltaTime);
+        else
+            camera->ProcessKeyboard(FORWARD, deltaTime);
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            camera->ProcessKeyboard(DOWN, deltaTime);
+        else
+            camera->ProcessKeyboard(BACKWARD, deltaTime);
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera->ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera->ProcessKeyboard(RIGHT, deltaTime);
+}
+
+// glfw: whenever the window size changed (by OS or user resize) this callback function executes
+// ---------------------------------------------------------------------------------------------
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    // make sure the viewport matches the new window dimensions; note that width and 
+    // height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height);
+}
+
+// glfw: whenever the mouse moves, this callback is called
+// -------------------------------------------------------
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+    lastX = xpos;
+    lastY = ypos;
+
+    camera->ProcessMouseMovement(xoffset, yoffset);
+}
+
+// glfw: whenever the mouse scroll wheel scrolls, this callback is called
+// ----------------------------------------------------------------------
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camera->ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
 // utility function for loading a 2D texture from file

@@ -12,8 +12,6 @@ in vec4 position[];
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
-uniform mat4 inverseView;
-uniform mat4 inverseProjection;
 
 uniform sampler2D windMap;
 uniform float time;
