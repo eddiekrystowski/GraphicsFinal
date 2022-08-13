@@ -3,10 +3,19 @@
 in float Height;
 
 out vec4 FragColor;
+in vec2 texCoord;
+
+uniform sampler2D dirtTexture;
+uniform sampler2D grassTexture;
+uniform float water_level;
 
 void main()
-{
-    float h = (Height + 16)/64.0f;
-    vec3 col = vec3(h,h,h) / 4;
-    FragColor = vec4(col, 1.0);
+{   
+    float h = (Height + 64)/256.0f;
+    if (h > water_level) {
+       FragColor = texture(grassTexture, texCoord*50); 
+    } else {
+       FragColor = texture(dirtTexture, texCoord*50); 
+    }
+    
 }

@@ -125,6 +125,7 @@ void main()
 
     // combine directional and point lighting
     vec3 total = directional_light + point_lighting;
+
     FragColor = vec4(total, 1.0);
-    FragColor = mix(vec4(total, 1.0), fogColor, fog);
+    //FragColor = mix(vec4(total, 1.0), fogColor, fog);
 }

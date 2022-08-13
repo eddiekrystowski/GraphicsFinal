@@ -8,9 +8,12 @@ in GS_OUT {
 
 uniform sampler2D grass_texture;
 uniform bool showBackgrounds;
+uniform float water_level;
 
 void main()
 {    
+    //float h = (fs_in.height + 64)/256.0f;
+    //if (h <= water_level) discard;
     vec4 color = texture(grass_texture, fs_in.textureCoords); 
     if (color.a < 0.15 && !showBackgrounds) discard;
     color.xyz = mix(color.xyz, 0.5*color.xyz, fs_in.color_variance);
