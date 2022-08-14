@@ -1422,9 +1422,9 @@ int main()
     //this error can be ignored, the program will compile and run successfully
     glDebugMessageCallback(Debug::GLDebugMessageCallback, NULL);
 
-    WaterFrameBuffer* waterFrameBuffer = new WaterFrameBuffer();
+   
 
-    // build and compile shaders
+    // build shader programs and setup uniforms
     // -------------------------
     Shader* waterShader = new Shader("./Shaders/water.vs", "./Shaders/water.fs");
     Shader* shader = new Shader("Shaders/Shader.vs", "Shaders/Shader.fs");
@@ -1432,17 +1432,32 @@ int main()
     Shader* debugDepthQuad = new Shader("./Shaders/debug_quad.vs", "./Shaders/debug_quad.fs", nullptr, nullptr, nullptr);
     Shader* tessHeightMapShader = new Shader("./Shaders/passthrough.vs", "./Shaders/terrain.fs", nullptr, "./Shaders/tessellation_ground.tesc", "./Shaders/tessellation_ground.tese");
     Shader* tessHeightMapGrassShader = new Shader("./Shaders/passthrough.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", "./Shaders/tessellation.tesc", "./Shaders/tessellation.tese");
-    
 
     tessHeightMapGrassShader->use();
     tessHeightMapGrassShader->setInt("grass_texture", 0);
     tessHeightMapGrassShader->setInt("windMap", 1);
     tessHeightMapGrassShader->setInt("heightMap", 2);
+
     tessHeightMapShader->use();
     tessHeightMapShader->setInt("heightMap", 0);
     tessHeightMapShader->setInt("dirtTexture", 1);
     tessHeightMapShader->setInt("grassTexture", 2);
+
+    waterShader->use();
+    waterShader->setInt("reflectionSampler", 0);
+    waterShader->setInt("refractionSampler", 1);
+    waterShader->setInt("dudvSampler", 2);
+    waterShader->setInt("normalSampler", 3);
+    waterShader->setInt("depthSampler", 4);
+
+    debugDepthQuad->use();
+    debugDepthQuad->setInt("depthMap", 0);
+
+    tessHeightMapShader->use();
+    tessHeightMapShader->setInt("heightMap", 0);
+    
     glUseProgram(0);
+
 
     // load textures
     // -------------
@@ -1454,7 +1469,7 @@ int main()
     unsigned int dirtTexture = loadTexture("Textures/dirttexture.png");
     unsigned int windMap = loadTexture("Textures/wind.jpg");
 
-    Terrain* terrain = new Terrain("./Textures/hmap6.png");
+    Terrain* terrain = new Terrain("./Textures/hmap7.jpg", true);
 
     terrain->SetShader(tessHeightMapShader);
     terrain->SetGrassShader(tessHeightMapGrassShader);
@@ -1464,10 +1479,9 @@ int main()
     terrain->SetWindMap(windMap);
 
 
-    Mesh* waterMesh = Water::GenerateMesh(glm::vec2(256.0f, 256.0f));
-
-
     Water* water = new Water();
+    Mesh* waterMesh = Water::GenerateMesh(glm::vec2(256.0f, 256.0f));
+    WaterFrameBuffer* waterFrameBuffer = new WaterFrameBuffer();
     water->SetMesh(waterMesh);
     water->SetShader(waterShader);
     water->SetDUDV(waterDudv);
@@ -1475,18 +1489,7 @@ int main()
     water->textureTiling = 4;
     water->distorsionStrength = 0.04f;
 
-    waterShader->use();
-    waterShader->setInt("reflectionSampler", 0);
-    waterShader->setInt("refractionSampler", 1);
-    waterShader->setInt("dudvSampler", 2);
-    waterShader->setInt("normalSampler", 3);
-    waterShader->setInt("depthSampler", 4);
-
-    debugDepthQuad->use();
-    debugDepthQuad->setInt("depthMap", 0);
-    tessHeightMapShader->use();
-    tessHeightMapShader->setInt("heightMap", 0);
-    glUseProgram(0);
+ 
 
     
 

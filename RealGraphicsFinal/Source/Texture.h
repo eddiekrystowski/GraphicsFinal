@@ -7,7 +7,3 @@ struct Texture {
     std::string path;
 };
 
-#ifndef cta
-#define cta
-
-#endif
