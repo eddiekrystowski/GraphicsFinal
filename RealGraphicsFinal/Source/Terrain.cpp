@@ -175,6 +175,7 @@ void Terrain::DrawGrass(Camera* camera, float deltaTime) {
     grassShader->setBool("drawFlower3", ImguiHelper::drawFlower3);
     grassShader->setBool("drawFlower4", ImguiHelper::drawFlower4);
     grassShader->setBool("showBackgrounds", ImguiHelper::showBackgrounds);
+    grassShader->setFloat("waterlevel", 16.0f);
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, -16.0f, 0.0f)); // translate it down so it's at the center of the scene

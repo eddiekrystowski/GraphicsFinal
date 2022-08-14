@@ -1554,9 +1554,9 @@ int main()
     stbi_set_flip_vertically_on_load(true);
     unsigned int waterDudv = loadTexture("Textures/dudv.png");
     unsigned int waterNormal = loadTexture("Textures/normal.png");
-    unsigned int grassAtlas = loadTexture("Textures/grass_atlas_noborder.png");
+    unsigned int grassAtlas = loadTexture("Textures/grass_atlas_evenlessborder.png");
     unsigned int grassTexture = loadTexture("Textures/dirttexture.png");
-    unsigned int dirtTexture = loadTexture("Textures/dirttexture.png");
+    unsigned int dirtTexture = loadTexture("Textures/rockside.jpg");
     unsigned int windMap = loadTexture("Textures/wind.jpg");
 
     Terrain* terrain = new Terrain("./Textures/hmap6.png");
