@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/common.hpp>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -37,6 +38,10 @@
 #include "Water.h"
 #include "Light.h"
 #include "Terrain.h"
+#include "Debug.h"
+#define glCheckError() Debug::glCheckError_(__FILE__, __LINE__) 
+#include "Window.h"
+
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -1332,14 +1337,22 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path); 
 
+glm::vec3 RGB(glm::vec3 color) {
+    return glm::vec3(color[0] / 255.0f, color[1] / 255.0f, color[2] / 255.0f);
+}
+
+glm::vec3 RGB(float v0, float v1, float v2) {
+    return glm::vec3(v0 / 255.0f, v1 / 255.0f, v2 / 255.0f);
+}
+
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+//const unsigned int SCR_WIDTH = 1600;
+//const unsigned int SCR_HEIGHT = 1000;
 
 // camera
-Camera* camera = new Camera(Projection::Perspective, 45, (float) (SCR_WIDTH / (float) SCR_HEIGHT));
-float lastX = (float)SCR_WIDTH / 2.0;
-float lastY = (float)SCR_HEIGHT / 2.0;
+Camera* camera = new Camera(Projection::Perspective, 45, (float) (Window::Width / (float)Window::Height));
+float lastX = (float)Window::Width / 2.0;
+float lastY = (float)Window::Height / 2.0;
 bool firstMouse = true;
 
 // timing
@@ -1349,132 +1362,11 @@ float lastFrame = 0.0f;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-        //camera.pause();
-        //if (camera.paused) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        //else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        camera->pause();
+        if (camera->paused) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
 }
-
-void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
-    GLenum severity, GLsizei length,
-    const GLchar* msg, const void* data)
-{
-    const char* _source;
-    const char* _type;
-    const char* _severity;
-
-    switch (source) {
-    case GL_DEBUG_SOURCE_API:
-        _source = "API";
-        break;
-
-    case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-        _source = "WINDOW SYSTEM";
-        break;
-
-    case GL_DEBUG_SOURCE_SHADER_COMPILER:
-        _source = "SHADER COMPILER";
-        break;
-
-    case GL_DEBUG_SOURCE_THIRD_PARTY:
-        _source = "THIRD PARTY";
-        break;
-
-    case GL_DEBUG_SOURCE_APPLICATION:
-        _source = "APPLICATION";
-        break;
-
-    case GL_DEBUG_SOURCE_OTHER:
-        _source = "UNKNOWN";
-        break;
-
-    default:
-        _source = "UNKNOWN";
-        break;
-    }
-
-    switch (type) {
-    case GL_DEBUG_TYPE_ERROR:
-        _type = "ERROR";
-        break;
-
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        _type = "DEPRECATED BEHAVIOR";
-        break;
-
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        _type = "UDEFINED BEHAVIOR";
-        break;
-
-    case GL_DEBUG_TYPE_PORTABILITY:
-        _type = "PORTABILITY";
-        break;
-
-    case GL_DEBUG_TYPE_PERFORMANCE:
-        _type = "PERFORMANCE";
-        break;
-
-    case GL_DEBUG_TYPE_OTHER:
-        _type = "OTHER";
-        break;
-
-    case GL_DEBUG_TYPE_MARKER:
-        _type = "MARKER";
-        break;
-
-    default:
-        _type = "UNKNOWN";
-        break;
-    }
-
-    switch (severity) {
-    case GL_DEBUG_SEVERITY_HIGH:
-        _severity = "HIGH";
-        break;
-
-    case GL_DEBUG_SEVERITY_MEDIUM:
-        _severity = "MEDIUM";
-        break;
-
-    case GL_DEBUG_SEVERITY_LOW:
-        _severity = "LOW";
-        break;
-
-    case GL_DEBUG_SEVERITY_NOTIFICATION:
-        _severity = "NOTIFICATION";
-        break;
-
-    default:
-        _severity = "UNKNOWN";
-        break;
-    }
-
-    printf("%d: %s of %s severity, raised from %s: %s\n",
-        id, _type, _severity, _source, msg);
-}
-
-
-GLenum glCheckError_(const char* file, int line)
-{
-    GLenum errorCode;
-    while ((errorCode = glGetError()) != GL_NO_ERROR)
-    {
-        std::string error;
-        switch (errorCode)
-        {
-        case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
-        case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
-        case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
-        case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break;
-        case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break;
-        case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
-        }
-        std::cout << error << " | " << file << " (" << line << ")" << std::endl;
-    }
-    return errorCode;
-}
-#define glCheckError() glCheckError_(__FILE__, __LINE__) 
 
 
 void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain);
@@ -1496,7 +1388,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Final Project", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(Window::Width, Window::Height, "Final Project", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -1526,7 +1418,9 @@ int main()
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
-    glDebugMessageCallback(GLDebugMessageCallback, NULL);
+    //sometimes this line says GLDebugMessageCallback is not a member of the Debug class,
+    //this error can be ignored, the program will compile and run successfully
+    glDebugMessageCallback(Debug::GLDebugMessageCallback, NULL);
 
     WaterFrameBuffer* waterFrameBuffer = new WaterFrameBuffer();
 
@@ -1534,6 +1428,7 @@ int main()
     // -------------------------
     Shader* waterShader = new Shader("./Shaders/water.vs", "./Shaders/water.fs");
     Shader* shader = new Shader("Shaders/Shader.vs", "Shaders/Shader.fs");
+    Shader* directionalShader = new Shader("./Shaders/directional.vs", "./Shaders/directional.fs", nullptr, nullptr, nullptr);
     Shader* debugDepthQuad = new Shader("./Shaders/debug_quad.vs", "./Shaders/debug_quad.fs", nullptr, nullptr, nullptr);
     Shader* tessHeightMapShader = new Shader("./Shaders/passthrough.vs", "./Shaders/terrain.fs", nullptr, "./Shaders/tessellation_ground.tesc", "./Shaders/tessellation_ground.tese");
     Shader* tessHeightMapGrassShader = new Shader("./Shaders/passthrough.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", "./Shaders/tessellation.tesc", "./Shaders/tessellation.tese");
@@ -1602,10 +1497,7 @@ int main()
     // initialize settings
     // -----------
 
-
-
-    //glEnable(GL_CULL_FACE);
-    //glCullFace(GL_BACK);
+    ImguiHelper::setup(window);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -1619,17 +1511,72 @@ int main()
         // -----
         processInput(window);
 
-        //waterMesh->draw(shader);
-
 
         // render
         // ------
 
         glClearColor(0.5f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-       
 
         renderScene(shader, waterDudv, waterFrameBuffer, water, terrain);
+
+        ImguiHelper::createFrame();
+
+        if (!ImguiHelper::timeOfDay) {
+            directionalShader->use();
+            directionalShader->setVec3("dir_light.ambient", glm::vec3(0.1f) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]));
+            directionalShader->setVec3("dir_light.diffuse", glm::vec3(0.4f) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]));
+            directionalShader->setVec3("dir_light.specular", glm::vec3(1.0) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]));
+            glUseProgram(0);
+        }
+
+        ImguiHelper::render();
+
+        if (ImguiHelper::AutoTime) {
+            ImguiHelper::time += ImguiHelper::timestep;
+            ImguiHelper::time = fmod(ImguiHelper::time, 24.0f);
+        }
+        if (ImguiHelper::timeOfDay) {
+            //calculate values based on the time of day
+            //lightLevel = glm::vec3(glm::clamp((1.0f / 2.0f) * (sin((M_PI / 12.0f) * (ImguiHelper::time)-(14.0f / 24.0f) * M_PI)) + 0.6f, 0.0, 0.9));
+            glm::vec3 light_col;
+            if (ImguiHelper::time <= 6 || ImguiHelper::time >= 18) {
+                //blend night with sunup/down
+                float delta = (ImguiHelper::time <= 6) ? ImguiHelper::time + 6 : (ImguiHelper::time - 18);
+                glm::vec3 other = RGB(240.0f, 160.0f, 22.0f);
+                float sun = glm::clamp((float)((1.0f / 2.0f) * (cos((M_PI / 6.0f) * (delta)) + 0.6)), 0.0f, 1.0f) * (0.15f);
+                //light_col = glm::mix(lightLevel, other, sun);
+            }
+            else {
+                // time > 6 time < 18
+                //blend sunup/sundown with mid day
+                float delta = ImguiHelper::time - 6;
+                glm::vec3 other = RGB(240.0f, 160.0f, 22.0f);
+                float sun = glm::clamp((float)((1.0f / 2.0f) * (cos((M_PI / 6.0f) * (delta)) + 0.6)), 0.0f, 1.0f) * (0.15f);
+                //light_col = glm::mix(lightLevel, other, sun);
+            }
+            ImguiHelper::lightColor[0] = light_col[0];
+            ImguiHelper::lightColor[1] = light_col[1];
+            ImguiHelper::lightColor[2] = light_col[2];
+            //skybox_color = glm::vec4(glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]), 1.0f);
+            ImguiHelper::fogColor[0] = light_col[0];
+            ImguiHelper::fogColor[1] = light_col[1];
+            ImguiHelper::fogColor[2] = light_col[2];
+
+            // set light direction (determined by light "position")
+            // the light revolves around the scene in a (large) circle given by the equation
+            //      a(x - x0) + b(y - y0) + c(z - z0) = 0
+            //     : where z is a constant and x,y change depending on time
+            float radius = 1.0f;
+            lightPos = glm::vec3(
+                radius * (cos((M_PI / 12.0f) * (ImguiHelper::time)-(14.0f / 24.0f) * M_PI)),     // x coordinate
+                radius * (sin((M_PI / 12.0f) * (ImguiHelper::time)-(14.0f / 24.0f) * M_PI)),     // y coordinate 
+                lightPos[2]                                                    // z coordinate
+            );
+        }
+       
+
+        
 
         glCheckError();
 
@@ -1647,6 +1594,7 @@ int main()
     // ------------------------------------------------------------------------
 
     ////end imgui
+    ImguiHelper::shutdown();
 
 
     glfwTerminate();

@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 #include "Texture.h"
+#include "Window.h"
 
 class WaterFrameBuffer {
 private:

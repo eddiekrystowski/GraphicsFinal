@@ -84,7 +84,7 @@ void WaterFrameBuffer::BindRefractionBuffer() {
 }
 void WaterFrameBuffer::UnbindBuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, 800, 600);
+	glViewport(0, 0, Window::Width, Window::Height);
 }
 
 void WaterFrameBuffer::BindFrameBuffer(GLuint buffer, int width, int height) {
