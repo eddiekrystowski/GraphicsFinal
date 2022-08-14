@@ -5,15 +5,18 @@ layout (triangle_strip, max_vertices = 12) out;
 out GS_OUT {
 	vec2 textureCoords;
 	float color_variance;
+	float value;
 } gs_out;
 
 in vec4 position[];
-	
+in vec2 texCoord[];
+
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
 uniform sampler2D windMap;
+uniform sampler2D heightMap;
 uniform float time;
 
 // uniforms from imgui settings
@@ -41,7 +44,7 @@ uniform bool drawFlower2;
 uniform bool drawFlower3;
 uniform bool drawFlower4;
 	
-
+uniform float waterlevel;
 // ----
 
 mat4 rotateY(float angle);
@@ -185,6 +188,14 @@ void createQuad(vec4 position,float angle) {
 	}
 
 	for (int i = 0; i < 4; i++) {
+		float texelsize = 1.0 / 30.0;
+		float height_max = 256.0;
+		float left  = texture(heightMap, texCoord[0] + vec2(-texelsize, 0.0)).r * height_max * 2.0 - 1.0;
+		float right = texture(heightMap, texCoord[0] + vec2( texelsize, 0.0)).r * height_max * 2.0 - 1.0;
+		float up    = texture(heightMap, texCoord[0] + vec2(0.0,  texelsize)).r * height_max * 2.0 - 1.0;
+		float down  = texture(heightMap, texCoord[0] + vec2(0.0, -texelsize)).r * height_max * 2.0 - 1.0;
+		vec3 normal = normalize(vec3(down - up, 2.0, left - right));
+		gs_out.value = dot(normal, vec3(0.0, 1.0, 0.0));
 		// apply wind rotation to top two corners
 		if (i == 2) wind_rotation = windModel;
 		//set position
@@ -198,6 +209,7 @@ void createQuad(vec4 position,float angle) {
 }
 
 void main() {
+	if (position[0].y < waterlevel) return;
 	// world space position acts as seed for randomness (should be unique and will not change based on view)
 	createQuad(position[0] , 0.0);
 	createQuad(position[0] , 45.0);
