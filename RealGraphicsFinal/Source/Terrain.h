@@ -19,11 +19,11 @@ public:
 
 	static unsigned int resolution;
 
-	unsigned int grassTexture;
 	unsigned int grassAtlas;
+	unsigned int cliffTexture;
 	unsigned int dirtTexture;
-	unsigned int sandTexture;
 	unsigned int windMap;
+	unsigned int normalMap;
 
 
 	Shader* shader;
@@ -34,11 +34,11 @@ public:
 	void SetShader(Shader* shader);
 	void SetGrassShader(Shader* grassShader);
 
-	void SetGrassTexture(unsigned int grassTexture);
 	void SetGrassAtlas(unsigned int grassAtlas);
-
+	void SetCliffTexture(unsigned int cliffTexture);
 	void SetDirtTexture(unsigned int dirtTexture);
 	void SetWindMap(unsigned int windMap);
+	void SetNormalMap(unsigned int normalMap);
 
 	void Render(Camera* camera, float deltaTime);
 	void DrawGrass(Camera* camera, float deltaTime);

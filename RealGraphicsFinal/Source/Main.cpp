@@ -1441,7 +1441,16 @@ int main()
     tessHeightMapShader->use();
     tessHeightMapShader->setInt("heightMap", 0);
     tessHeightMapShader->setInt("dirtTexture", 1);
-    tessHeightMapShader->setInt("grassTexture", 2);
+    tessHeightMapShader->setInt("cliffTexture", 2);
+    tessHeightMapShader->setInt("normalMap", 3);
+    glm::vec3 lightLevel = glm::vec3(1.0);
+    glm::vec3 diffuseColor = glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * lightLevel;
+    glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2);
+    tessHeightMapShader->setVec3("dir_light.ambient", ambientColor);
+    tessHeightMapShader->setVec3("dir_light.diffuse", diffuseColor);
+    tessHeightMapShader->setVec3("dir_light.specular", glm::vec3(1.0) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * glm::vec3(1.0));
+    tessHeightMapShader->setVec3("dir_light.lightPos", Light::position);
+    tessHeightMapShader->setVec3("dir_light.direction", Light::direction);
 
     waterShader->use();
     waterShader->setInt("reflectionSampler", 0);
@@ -1465,19 +1474,20 @@ int main()
     unsigned int waterDudv = loadTexture("Textures/dudv.png");
     unsigned int waterNormal = loadTexture("Textures/normal.png");
     unsigned int grassAtlas = loadTexture("Textures/grass_atlas_evenlessborder.png");
-    unsigned int grassTexture = loadTexture("Textures/dirttexture.png");
-    unsigned int dirtTexture = loadTexture("Textures/rockside.jpg");
+    unsigned int dirtTexture = loadTexture("Textures/dirttexture.png");
+    unsigned int cliffTexture = loadTexture("Textures/cliff.jpg");
     unsigned int windMap = loadTexture("Textures/wind.jpg");
+    unsigned int cliffNormalMap = loadTexture("Textures/cliffBump.png");
 
     Terrain* terrain = new Terrain("./Textures/hmap7.jpg", true);
 
     terrain->SetShader(tessHeightMapShader);
     terrain->SetGrassShader(tessHeightMapGrassShader);
     terrain->SetGrassAtlas(grassAtlas);
-    terrain->SetGrassTexture(grassTexture);
     terrain->SetDirtTexture(dirtTexture);
+    terrain->SetCliffTexture(cliffTexture);
     terrain->SetWindMap(windMap);
-
+    terrain->SetNormalMap(cliffNormalMap);
 
     Water* water = new Water();
     Mesh* waterMesh = Water::GenerateMesh(glm::vec2(256.0f, 256.0f));

@@ -106,8 +106,8 @@ void Terrain::SetGrassAtlas(unsigned int grassAtlas) {
     this->grassAtlas = grassAtlas;
 }
 
-void Terrain::SetGrassTexture(unsigned int grassTexture) {
-    this->grassTexture = grassTexture;
+void Terrain::SetCliffTexture(unsigned int cliffTexture) {
+    this->cliffTexture = cliffTexture;
 }
 
 void Terrain::SetDirtTexture(unsigned int dirtTexture) {
@@ -116,6 +116,10 @@ void Terrain::SetDirtTexture(unsigned int dirtTexture) {
 
 void Terrain::SetWindMap(unsigned int windMap) {
     this->windMap = windMap;
+}
+
+void Terrain::SetNormalMap(unsigned int normalMap) {
+    this->normalMap = normalMap;
 }
 
 void Terrain::Render(Camera* camera, float deltaTime) {
@@ -129,6 +133,7 @@ void Terrain::Render(Camera* camera, float deltaTime) {
     //std::cout << projection << std::endl;
     shader->setMat4("projection", projection);
     shader->setMat4("view", view);
+    shader->setVec3("cameraPosition", camera->GetPosition());
 
     //// world transformation
     glm::mat4 model = glm::mat4(1.0f);
@@ -142,7 +147,9 @@ void Terrain::Render(Camera* camera, float deltaTime) {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, dirtTexture);
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, grassTexture);
+    glBindTexture(GL_TEXTURE_2D, cliffTexture);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, normalMap);
 
     glBindVertexArray(VAO);
 
