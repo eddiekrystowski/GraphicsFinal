@@ -34,7 +34,7 @@ vec3 directional(sampler2D sampler, vec3 patchNormal, int textureTiling) {
     vec3 bumpMapNormal = texture(normalMap, texCoord*textureTiling).rgb; 
     bumpMapNormal = normalize(bumpMapNormal * 2.0 - 1.0); 
     vec3 normal = (bumpMapNormal - vec3(0.0, 0.0, 1.0)) + patchNormal;
-    //normal = patchNormal;
+    normal = patchNormal;
     vec3 lightDir = normalize(dir_light.lightPos - vec3(position));
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = dir_light.diffuse * diff * texture(sampler, texCoord*textureTiling).rgb;
@@ -64,6 +64,9 @@ vec3 directional(sampler2D sampler, vec3 patchNormal, int textureTiling) {
 
 void main()
 {   
+    if (texCoord.x <= 1.0/256.0 || texCoord.x >= 255.0/256.0) discard;
+    if (texCoord.y <= 1.0/256.0 || texCoord.y >= 255.0/256.0) discard;
+
     float texelsize = 1.0 / 30.0;
     float height_max = 256.0;
     float left  = texture(heightMap, texCoord + vec2(-texelsize, 0.0)).r * height_max * 2.0 - 1.0;
@@ -71,8 +74,12 @@ void main()
     float up    = texture(heightMap, texCoord + vec2(0.0,  texelsize)).r * height_max * 2.0 - 1.0;
     float down  = texture(heightMap, texCoord + vec2(0.0, -texelsize)).r * height_max * 2.0 - 1.0;
     vec3 normal = normalize(vec3(down - up, 2.0, left - right));
+
+    if (texCoord.x <= 10.0/256.0 || (texCoord.x >= 246.0/256.0 && texCoord.y >= 71.0/256.0) || (texCoord.y <= 10.0/256.0 && texCoord.x  <= 185.0/256.0) || texCoord.y >= 240.0/256.0) {
+        normal = vec3(0.0, 1.0, 0.0);
+    }
     float value = dot(normal, vec3(0.0, 1.0, 0.0));
-    if (value > 0.1) {
+    if (value > 0.07) {
         FragColor = texture(dirtTexture, texCoord*10);//vec4(directional(dirtTexture, normal, 80), 1.0); 
     } else {
         FragColor = vec4(directional(cliffTexture, normal, 10), 1.0);

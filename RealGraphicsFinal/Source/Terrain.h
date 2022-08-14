@@ -24,6 +24,7 @@ public:
 	unsigned int dirtTexture;
 	unsigned int windMap;
 	unsigned int normalMap;
+	unsigned int pathTexture;
 
 
 	Shader* shader;
@@ -39,6 +40,7 @@ public:
 	void SetDirtTexture(unsigned int dirtTexture);
 	void SetWindMap(unsigned int windMap);
 	void SetNormalMap(unsigned int normalMap);
+	void SetPathTexture(unsigned int pathTexture);
 
 	void Render(Camera* camera, float deltaTime);
 	void DrawGrass(Camera* camera, float deltaTime);

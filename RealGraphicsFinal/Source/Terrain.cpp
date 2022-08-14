@@ -122,6 +122,10 @@ void Terrain::SetNormalMap(unsigned int normalMap) {
     this->normalMap = normalMap;
 }
 
+void Terrain::SetPathTexture(unsigned int pathTexture) {
+    this->pathTexture = pathTexture;
+}
+
 void Terrain::Render(Camera* camera, float deltaTime) {
     Shader* shader = this->shader;
 
@@ -204,6 +208,8 @@ void Terrain::DrawGrass(Camera* camera, float deltaTime) {
     glBindTexture(GL_TEXTURE_2D, windMap);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, heightmap);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, pathTexture);
     //generatePlanes(40, tessHeightMapGrassShader, true);
 
     glBindVertexArray(VAO);

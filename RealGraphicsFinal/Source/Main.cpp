@@ -1437,6 +1437,8 @@ int main()
     tessHeightMapGrassShader->setInt("grass_texture", 0);
     tessHeightMapGrassShader->setInt("windMap", 1);
     tessHeightMapGrassShader->setInt("heightMap", 2);
+    tessHeightMapGrassShader->setInt("pathTexture", 3);
+
 
     tessHeightMapShader->use();
     tessHeightMapShader->setInt("heightMap", 0);
@@ -1478,8 +1480,12 @@ int main()
     unsigned int cliffTexture = loadTexture("Textures/cliff.jpg");
     unsigned int windMap = loadTexture("Textures/wind.jpg");
     unsigned int cliffNormalMap = loadTexture("Textures/cliffBump.png");
+    stbi_set_flip_vertically_on_load(false);
+    int pw, ph;
+    unsigned int pathTexture = Terrain::LoadHeightmap("Textures/hmap10_path2.png", &pw, &ph);
 
-    Terrain* terrain = new Terrain("./Textures/hmap7.jpg", true);
+    stbi_set_flip_vertically_on_load(false);
+    Terrain* terrain = new Terrain("./Textures/hmap10.png", false);
 
     terrain->SetShader(tessHeightMapShader);
     terrain->SetGrassShader(tessHeightMapGrassShader);
@@ -1488,6 +1494,7 @@ int main()
     terrain->SetCliffTexture(cliffTexture);
     terrain->SetWindMap(windMap);
     terrain->SetNormalMap(cliffNormalMap);
+    terrain->SetPathTexture(pathTexture);
 
     Water* water = new Water();
     Mesh* waterMesh = Water::GenerateMesh(glm::vec2(256.0f, 256.0f));
@@ -1908,8 +1915,8 @@ unsigned int loadTexture(char const* path)
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT); // for this tutorial: use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes texels from next repeat 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // for this tutorial: use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes texels from next repeat 
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 

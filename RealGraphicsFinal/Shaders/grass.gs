@@ -17,6 +17,7 @@ uniform mat4 model;
 
 uniform sampler2D windMap;
 uniform sampler2D heightMap;
+uniform sampler2D pathTexture;
 uniform float time;
 
 // uniforms from imgui settings
@@ -195,6 +196,9 @@ void createQuad(vec4 position,float angle) {
 		float up    = texture(heightMap, texCoord[0] + vec2(0.0,  texelsize)).r * height_max * 2.0 - 1.0;
 		float down  = texture(heightMap, texCoord[0] + vec2(0.0, -texelsize)).r * height_max * 2.0 - 1.0;
 		vec3 normal = normalize(vec3(down - up, 2.0, left - right));
+		if (texCoord[0].x <= 10.0/256.0 || (texCoord[0].x >= 246.0/256.0 && texCoord[0].y >= 71.0/256.0) || (texCoord[0].y <= 10.0/256.0 && texCoord[0].x  <= 185.0/256.0) || texCoord[0].y >= 240.0/256.0) {
+			normal = vec3(0.0, 1.0, 0.0);
+		}
 		gs_out.value = dot(normal, vec3(0.0, 1.0, 0.0));
 		// apply wind rotation to top two corners
 		if (i == 2) wind_rotation = windModel;
@@ -210,6 +214,9 @@ void createQuad(vec4 position,float angle) {
 
 void main() {
 	if (position[0].y < waterlevel) return;
+	if (texture(pathTexture, texCoord[0]).r > 0.2)  return;
+	if (texCoord[0].x <= 1.0/256.0 || texCoord[0].x >= 255.0/256.0) return;
+    if (texCoord[0].y <= 1.0/256.0 || texCoord[0].y >= 255.0/256.0) return;
 	// world space position acts as seed for randomness (should be unique and will not change based on view)
 	createQuad(position[0] , 0.0);
 	createQuad(position[0] , 45.0);
