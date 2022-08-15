@@ -59,7 +59,6 @@ void main() {
 	vec4 reflectColor = texture(reflectionSampler, reflectionTextureCoord);
 	vec4 refractColor = texture(refractionSampler, refractionTextureCoord);
 
-
 	// calculate normal
 	vec4 normalMapColor = texture(normalSampler, distortedTexCoords);
 	vec3 normal = vec3(normalMapColor.r * 2.0 - 1.0, normalMapColor.b * 3.0, normalMapColor.g * 2.0 - 1.0);

@@ -24,7 +24,7 @@ uniform vec3 cameraPosition;
 uniform vec3 lightPosition;
 
 void main() {
-  vec4 worldPosition = gWorld * inPosition;
+	vec4 worldPosition = gWorld * inPosition;
 	vec4 positionRelativeToCamera = gCamera * worldPosition;
 
 	Out.worldPosition = gProj * positionRelativeToCamera;

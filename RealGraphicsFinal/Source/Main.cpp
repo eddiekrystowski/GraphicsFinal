@@ -1447,7 +1447,7 @@ int main()
     tessHeightMapShader->setInt("normalMap", 3);
     glm::vec3 lightLevel = glm::vec3(1.0);
     glm::vec3 diffuseColor = glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * lightLevel;
-    glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2);
+    glm::vec3 ambientColor = diffuseColor * glm::vec3(0.7);
     tessHeightMapShader->setVec3("dir_light.ambient", ambientColor);
     tessHeightMapShader->setVec3("dir_light.diffuse", diffuseColor);
     tessHeightMapShader->setVec3("dir_light.specular", glm::vec3(1.0) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * glm::vec3(1.0));

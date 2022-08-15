@@ -1,6 +1,7 @@
 #include "Water.h"
 #include "Mesh.h"
 #include<vector>
+#include "WaterFrameBuffer.h"
 
 glm::vec3 light_position = glm::vec3(1024, 200, 3072);
 glm::vec3 light_color = glm::vec3(1, 1, 1);

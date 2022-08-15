@@ -15,7 +15,7 @@ void main()
 {
     if (fs_in.value <= 0.07) discard;
     vec4 color = texture(grass_texture, fs_in.textureCoords); 
-    if (color.a < 0.15 && !showBackgrounds) discard;
+    if (color.a < 0.2 && !showBackgrounds) discard;
     color.xyz = mix(color.xyz, 0.5*color.xyz, fs_in.color_variance);
     if (color.a < 0.15 && showBackgrounds) color = vec4(fs_in.color_variance);
     FragColor = color;

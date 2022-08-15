@@ -80,7 +80,7 @@ void main()
     }
     float value = dot(normal, vec3(0.0, 1.0, 0.0));
     if (value > 0.07) {
-        FragColor = texture(dirtTexture, texCoord*10);//vec4(directional(dirtTexture, normal, 80), 1.0); 
+        FragColor = vec4(directional(dirtTexture, normal, 10), 1.0); 
     } else {
         FragColor = vec4(directional(cliffTexture, normal, 10), 1.0);
     }

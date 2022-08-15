@@ -166,6 +166,9 @@ void Terrain::Render(Camera* camera, float deltaTime) {
 
 void Terrain::DrawGrass(Camera* camera, float deltaTime) {
 
+    //glEnable(GL_BLEND);
+    //glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     grassShader->use();
     grassShader->setFloat("time", glfwGetTime());
     //settings from imgui
@@ -214,6 +217,8 @@ void Terrain::DrawGrass(Camera* camera, float deltaTime) {
 
     glBindVertexArray(VAO);
     glDrawArrays(GL_PATCHES, 0, 4 * Terrain::resolution * Terrain::resolution);
+
+    //glDisable(GL_BLEND);
 }
 
 
@@ -258,6 +263,8 @@ unsigned int Terrain::AlternativeLoadHeightmap(char const* path, int* width, int
 
 
 unsigned int Terrain::LoadHeightmap(const char* heightmapPath, int* width, int* height) {
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
     unsigned int texture;
     glGenTextures(1, &texture);
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -267,16 +274,16 @@ unsigned int Terrain::LoadHeightmap(const char* heightmapPath, int* width, int* 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // load image, create texture and generate mipmaps
     int nrChannels;
     //need to use stbi load 16 because heightmap is 16 bits per color
-    stbi_us* data = stbi_load_16(heightmapPath, width, height, &nrChannels, 4);
+    stbi_us* data = stbi_load_16(heightmapPath, width, height, &nrChannels, 0);
     if (data)
     {
         // Need to use GL_UNSIGNED_SHORT since each color is 16 bits == 2 bytes == 1 short, not an int (4 bytes)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, *width, *height, 0, GL_RGBA, GL_UNSIGNED_SHORT, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, *width, *height, 0, GL_RED, GL_UNSIGNED_SHORT, data);
 
         //glGenerateMipmap(GL_TEXTURE_2D);
         std::cout << "Loaded heightmap of size " << *height << " x " << *width << std::endl;

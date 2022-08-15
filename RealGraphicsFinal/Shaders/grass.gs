@@ -125,10 +125,11 @@ void createQuad(vec4 position,float angle) {
 	//positions
 	vec4 offsets[4];
 	float randX = (random(position.xz) - 0.5);
-	offsets[0] = vec4(-0.5 + randX, 0.0, 0.0, 0.0);
-	offsets[1] = vec4( 0.5 + randX, 0.0, 0.0, 0.0);	
-	offsets[2] = vec4(-0.5 + randX, 1.0 * growth_factor * grass_height_factor, 0.0, 0.0);
-	offsets[3] = vec4( 0.5 + randX, 1.0 * growth_factor * grass_height_factor, 0.0, 0.0);	
+	float randZ = (random(position.zx) - 0.5);
+	offsets[0] = vec4(-0.5 + randX, 0.0, randZ, 0.0);
+	offsets[1] = vec4( 0.5 + randX, 0.0, -randZ, 0.0);	
+	offsets[2] = vec4(-0.5 + randX, 1.0 * growth_factor * grass_height_factor, randZ, 0.0);
+	offsets[3] = vec4( 0.5 + randX, 1.0 * growth_factor * grass_height_factor, -randZ, 0.0);	
 
 	//texture coordinates
 	vec2 texCoords[4];
