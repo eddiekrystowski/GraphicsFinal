@@ -15,7 +15,7 @@ uniform mat4 projection;
 uniform mat4 lightSpaceMatrix;
 
 const vec3 treePositions[50] = vec3[50](
-	vec3(0.0, 0.0, 0.0),
+	vec3(10.0, 0.0, 0.0),
 	//southern forest
 	vec3(-120.0, 11.0, 0.0),
 	vec3(-120.0, 12.0, -5.0),

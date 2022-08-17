@@ -1355,6 +1355,7 @@ unsigned int depthMap;
 float near_plane = -10.0f;
 float far_plane = 200;
 
+unsigned int castleNormal;
 
 // camera
 Camera* camera = new Camera(Projection::Perspective, 45, (float) (Window::Width / (float)Window::Height));
@@ -1464,7 +1465,7 @@ int main()
     //this error can be ignored, the program will compile and run successfully
     glDebugMessageCallback(Debug::GLDebugMessageCallback, NULL);
 
-    camera->SetPosition(glm::vec3(99.6366, 180.265, 97.0331));
+    //camera->SetPosition(glm::vec3(99.6366, 180.265, 97.0331));
 
     // build shader programs and setup uniforms
     // -------------------------
@@ -1514,6 +1515,7 @@ int main()
     directionalShader->use();
     directionalShader->setInt("num_points", 0);
     directionalShader->setInt("shadowMap", 4);
+    directionalShader->setInt("normalMap", 3);
     directionalShader->setInt("fogEnd", ImguiHelper::fogEnd);
     directionalShader->setInt("fogStart", ImguiHelper::fogStart);
     directionalShader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
@@ -1523,6 +1525,7 @@ int main()
     directionalShader->setVec3("dir_light.lightPos", Light::position);
     directionalShader->setVec3("dir_light.direction", Light::direction); 
     directionalShader->setFloat("material.shininess", 32.0f);
+
     
     glUseProgram(0);
 
@@ -1537,6 +1540,9 @@ int main()
     unsigned int cliffTexture = loadTexture("Textures/cliff.jpg");
     unsigned int windMap = loadTexture("Textures/wind.jpg");
     unsigned int cliffNormalMap = loadTexture("Textures/cliffBump.png");
+    unsigned int castleWallTexture = loadTexture("Textures/walltexture.jpg");
+    castleNormal = loadTexture("Textures/castleNormal5.jpg");
+
     stbi_set_flip_vertically_on_load(false);
     int pw, ph;
     unsigned int pathTexture = Terrain::LoadHeightmap("Textures/hmap10_path2.png", &pw, &ph);
@@ -2054,9 +2060,13 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     directionalShader->setMat4("view", camera->GetViewMatrix());
     directionalShader->setMat4("projection", camera->GetProjectionMatrix());
     directionalShader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    directionalShader->setVec3("lightPos", Light::position);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, castleNormal);
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, depthMap);
     castle->draw(*directionalShader);
+
 
     //Render Trees
     treeShader.use();
