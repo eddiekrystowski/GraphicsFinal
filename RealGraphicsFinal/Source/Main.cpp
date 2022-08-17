@@ -1348,6 +1348,13 @@ glm::vec3 RGB(float v0, float v1, float v2) {
 // settings
 //const unsigned int SCR_WIDTH = 1600;
 //const unsigned int SCR_HEIGHT = 1000;
+const unsigned int shadowScale = 1;
+const unsigned int SHADOW_WIDTH = shadowScale * Window::Height, SHADOW_HEIGHT = shadowScale* Window::Height;
+unsigned int depthMapFBO;
+unsigned int depthMap;
+float near_plane = -10.0f;
+float far_plane = 200;
+
 
 // camera
 Camera* camera = new Camera(Projection::Perspective, 45, (float) (Window::Width / (float)Window::Height));
@@ -1358,6 +1365,35 @@ bool firstMouse = true;
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+    if (quadVAO == 0)
+    {
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
 
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -1375,7 +1411,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 
-void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain, Model* castle);
+void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain, Model* castle);
 void renderCube(unsigned int texture, bool clipPlaneEnabled, glm::vec4 clipPlane = glm::vec4(0, 0, 0, 0));
 
 int main()
@@ -1428,7 +1464,8 @@ int main()
     //this error can be ignored, the program will compile and run successfully
     glDebugMessageCallback(Debug::GLDebugMessageCallback, NULL);
 
-   
+    camera->SetPosition(glm::vec3(99.6366, 180.265, 97.0331));
+
 
     // build shader programs and setup uniforms
     // -------------------------
@@ -1438,6 +1475,7 @@ int main()
     Shader* debugDepthQuad = new Shader("./Shaders/debug_quad.vs", "./Shaders/debug_quad.fs", nullptr, nullptr, nullptr);
     Shader* tessHeightMapShader = new Shader("./Shaders/passthrough.vs", "./Shaders/terrain.fs", nullptr, "./Shaders/tessellation_ground.tesc", "./Shaders/tessellation_ground.tese");
     Shader* tessHeightMapGrassShader = new Shader("./Shaders/passthrough.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", "./Shaders/tessellation.tesc", "./Shaders/tessellation.tese");
+    Shader* simpleDepthShader = new Shader("./Shaders/depthShader.vs", "./Shaders/depthShader.fs", nullptr, nullptr, nullptr);
 
     tessHeightMapGrassShader->use();
     tessHeightMapGrassShader->setInt("grass_texture", 0);
@@ -1472,6 +1510,19 @@ int main()
 
     tessHeightMapShader->use();
     tessHeightMapShader->setInt("heightMap", 0);
+
+    directionalShader->use();
+    directionalShader->setInt("num_points", 0);
+    directionalShader->setInt("shadowMap", 4);
+    directionalShader->setInt("fogEnd", ImguiHelper::fogEnd);
+    directionalShader->setInt("fogStart", ImguiHelper::fogStart);
+    directionalShader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    directionalShader->setVec3("dir_light.ambient", ambientColor);
+    directionalShader->setVec3("dir_light.diffuse", diffuseColor);
+    directionalShader->setVec3("dir_light.specular", glm::vec3(1.0) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * glm::vec3(1.0));
+    directionalShader->setVec3("dir_light.lightPos", Light::position);
+    directionalShader->setVec3("dir_light.direction", Light::direction); 
+    directionalShader->setFloat("material.shininess", 32.0f);
     
     glUseProgram(0);
 
@@ -1514,7 +1565,26 @@ int main()
 
     Model* castle = new Model("./Models/castle_no_ground.obj");
 
+    // configure depth map FBO
+ // -----------------------
 
+    glGenFramebuffers(1, &depthMapFBO);
+    // create depth texture
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    // attach depth texture as FBO's depth buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
  
 
     
@@ -1525,7 +1595,7 @@ int main()
 
     // initialize settings
     // -----------
-
+    //glEnable(GL_FRAMEBUFFER_SRGB);
     ImguiHelper::setup(window);
 
     while (!glfwWindowShouldClose(window))
@@ -1547,7 +1617,15 @@ int main()
         glClearColor(0.5f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        renderScene(shader, waterDudv, waterFrameBuffer, water, terrain, castle);
+        renderScene(shader, directionalShader, waterDudv, waterFrameBuffer, water, terrain, castle);
+        glCheckError();
+
+        debugDepthQuad->use();
+        debugDepthQuad->setFloat("near_plane", near_plane);
+        debugDepthQuad->setFloat("far_plane", far_plane);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+        //renderQuad();
 
         ImguiHelper::createFrame();
 
@@ -1717,18 +1795,66 @@ void renderCube(unsigned int texture, bool clipPlaneEnabled, glm::vec4 clipPlane
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain, Model* castle) {
-
+void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain, Model* castle) {
     glm::vec3 skyColor = glm::vec3(0.815f, 0.925f, 0.992f);
     glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::vec3 cubePos = glm::vec3(0, 2, 0);
-    glm::vec3 castlePos = glm::vec3(115, 53.5, 10);
+    glm::vec3 castlePos = glm::vec3(92.4, 57.0, 25);
     glm::vec3 castleRot = glm::vec3(0, 1, 0);
     float castleRotAngle = 60.0f;
-    float castleScale = 0.3f;
+    float castleScale = 0.2f;
     float castleYScale = 0.5f;
+
+
+    //render scene to depth fbo
+    glm::mat4 lightProjection;
+    glm::mat4 lightSpaceMatrix;
+    //float near_plane = -10.0f, far_plane = 700.5f;
+    //lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
+    Camera* depthCam = new Camera(Projection::Orthographic, 25, 1.0, near_plane, far_plane);
+    depthCam->SetPosition(Light::position);
+    depthCam->viewMatrix = glm::lookAt(Light::position, glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
+    lightProjection = depthCam->GetProjectionMatrix();//glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+    //lightView = glm::lookAt(Light::position, glm::vec3(200 * Light::direction.x, 200* Light::direction.y, 200 * Light::direction.z), glm::vec3(0.0, 1.0, 0.0));
+    lightSpaceMatrix = lightProjection * depthCam->GetViewMatrix();
+    // render scene from light's point of view
+    glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    terrain->shader->use();
+    terrain->shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    terrain->shader->setInt("shadowMap", 5);
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    terrain->Render(depthCam, deltaTime);
+    shader->use();
+    glm::mat4 model = glm::mat4(1.0);
+    model = glm::translate(model, cubePos);
+    model = glm::mat4(1.0);
+    model = glm::translate(model, castlePos);
+    model = glm::scale(model, glm::vec3(castleScale));
+    model = glm::rotate(model, glm::radians(castleRotAngle), castleRot);
+    shader->setVec4("clipPlane", glm::vec4(0, 0, 0, 0));
+    shader->setFloat("textureTiling", 1);
+    shader->setVec3("directionalLight.color", Light::color);
+    shader->setFloat("directionalLight.intensity", Light::intensity);
+    shader->setVec3("directionalLight.direction", Light::direction);
+    shader->setMat4("gProj", depthCam->GetProjectionMatrix());
+    shader->setMat4("gCamera", depthCam->GetViewMatrix());
+    shader->setMat4("gWorld", model);
+    shader->setInt("textureSampler", 0);
+    castle->draw(*shader);
+    glUseProgram(0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // reset viewport
+    glViewport(0, 0, Window::Width, Window::Height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+
 
     glm::vec3 cameraPos = camera->GetPosition();
     float pitch = camera->GetPitch();
@@ -1742,10 +1868,15 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     waterFrameBuffer->BindReflectionBuffer();
     waterFrameBuffer->Clear();
     //enable clip plane
+    terrain->shader->use();
+    terrain->shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    terrain->shader->setInt("shadowMap", 5);
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
     terrain->Render(camera, deltaTime);
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, 1, 0, 0));
-    glm::mat4 model = glm::mat4(1.0);
+    model = glm::mat4(1.0);
     model = glm::translate(model, cubePos);
     shader->setFloat("textureTiling", 1);
     shader->setVec3("directionalLight.color", Light::color);
@@ -1766,13 +1897,6 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     //disable clip plane
     waterFrameBuffer->UnbindBuffer();
 
-    //debugDepthQuad.use();
-    //debugDepthQuad.setFloat("near_plane", near_plane);
-    //debugDepthQuad.setFloat("far_plane", far_plane);
-    //glActiveTexture(GL_TEXTURE0);
-    //glBindTexture(GL_TEXTURE_2D, depthMap);
-    //renderQuad();
-
     //move camera back
     cameraPos.y *= -1;
     pitch *= -1;
@@ -1782,6 +1906,11 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     // Render the scene in the refraction buffer
     waterFrameBuffer->BindRefractionBuffer();
     waterFrameBuffer->Clear();
+    terrain->shader->use();
+    terrain->shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    terrain->shader->setInt("shadowMap", 5);
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
     terrain->Render(camera, deltaTime);
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, -1, 0, 0));
@@ -1805,7 +1934,14 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     glUseProgram(0);
     waterFrameBuffer->UnbindBuffer();
 
+    glCheckError();
 
+
+    terrain->shader->use();
+    terrain->shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    terrain->shader->setInt("shadowMap", 5);
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
     terrain->Render(camera, deltaTime);    
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, 0, 0, 0));
@@ -1820,19 +1956,26 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     shader->setMat4("gWorld", model);
     shader->setInt("textureSampler", 0);
     renderCube(cubeTexture, true, glm::vec4(0, -1, 0, 0));
+    directionalShader->use();
     model = glm::mat4(1.0);
     model = glm::translate(model, castlePos);
     model = glm::scale(model, glm::vec3(castleScale));
     model = glm::rotate(model, glm::radians(castleRotAngle), castleRot);
-    shader->setMat4("gWorld", model);
-    castle->draw(*shader);
+    directionalShader->setMat4("model", model);
+    directionalShader->setVec3("viewPos", camera->GetPosition());
+    directionalShader->setMat4("view", camera->GetViewMatrix());
+    directionalShader->setMat4("projection", camera->GetProjectionMatrix());
+    directionalShader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    castle->draw(*directionalShader);
     glUseProgram(0);
+    glActiveTexture(GL_TEXTURE0);
 
 
     water->Render(camera, waterFrameBuffer);
 
-
-
+    glCheckError();
 }
 
 
