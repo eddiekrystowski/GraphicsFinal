@@ -44,6 +44,11 @@ float ImguiHelper::windspeed = 0.15f;
 float ImguiHelper::windstrength = 0.15;
 bool ImguiHelper::showBackgrounds = false;
 
+float ImguiHelper::gamma = 1.2;
+bool ImguiHelper::useGamma = false;
+bool ImguiHelper::grassBlend = false;
+bool ImguiHelper::useFog = false;
+
 void ImguiHelper::setup(GLFWwindow* window) {
     //setup IMGUI
     ImGui::CreateContext();
@@ -63,23 +68,60 @@ void ImguiHelper::createFrame() {
 
 void ImguiHelper::render() {
     ImGui::Begin("Settings");
-    ImGui::Checkbox("Draw Castle", &drawCastle);
-    ImGui::Checkbox("Draw Ocean", &drawOcean);
+    //ImGui::Checkbox("Draw Castle", &drawCastle);
     ImGui::Checkbox("Draw Skybox", &drawSkybox);
-    ImGui::SliderFloat("Fog Start", &fogStart, 0.0f, 100.0f);
-    ImGui::SliderFloat("Fog End", &fogEnd, 0.0f, 100.0f);
-    ImGui::ColorEdit4("Fog Color", fogColor);
-    ImGui::ColorEdit4("Light Color", lightColor);
-    ImGui::Checkbox("Time of Day", &timeOfDay);
-    if (timeOfDay) {
+    ImGui::Checkbox("Use Fog", &useFog);
+    if (useFog) {
         ImGui::Indent(32.0f);
-        ImGui::Checkbox("AutoTime", &AutoTime);
-        if (AutoTime) {
+        ImGui::SliderFloat("Fog Start", &fogStart, 0.0f, 600.0f);
+        ImGui::SliderFloat("Fog End", &fogEnd, 0.0f, 600.0f);
+        ImGui::ColorEdit4("Fog Color", fogColor);
+        ImGui::Unindent(32.0f);
+    }
+    ImGui::ColorEdit4("Light Color", lightColor);
+    ImGui::Checkbox("Use Gamma", &useGamma);
+    if (useGamma) {
+        ImGui::Indent(32.0f);
+        ImGui::SliderFloat("Gamma", &gamma, 0.0f, 10.0f);
+        ImGui::Unindent(32.0f);
+    }
+    ImGui::Text("GRASS SETTINGS:");
+    //ImGui::Checkbox("Draw Ground", &drawGround);
+    ImGui::Checkbox("Draw Grass", &renderGrass);
+    if (renderGrass) {
+        ImGui::Indent(32.0f);
+        ImGui::Checkbox("Blend Grass", &grassBlend);
+        ImGui::SliderFloat("Min Grass Height", &min_grass_height, 0.0f, 1.0f);
+        ImGui::SliderFloat("Grass Height Factor", &grass_height_factor, 0.0f, 5.0f);
+        ImGui::Checkbox("Show Texture Backgrounds", &showBackgrounds);
+        ImGui::Checkbox("Wind", &wind);
+        if (wind) {
             ImGui::Indent(32.0f);
-            ImGui::SliderFloat("timestep", &timestep, 0.0f, 1.0f);
+            ImGui::SliderFloat("Wind Speed", &windspeed, 0.0f, 1.0f);
+            ImGui::SliderFloat("Wind Strength", &windstrength, 0.0f, 1.0f);
             ImGui::Unindent(32.0f);
         }
-        ImGui::SliderFloat("Time", &time, 0.0f, 24.0f);
+        ImGui::Checkbox("Use Multiple Grass Textures", &multipleTextures);
+        if (multipleTextures) {
+            ImGui::Indent(32.0f);
+            ImGui::Checkbox("Use Grass 1", &drawGrass1);
+            ImGui::Checkbox("Use Grass 2", &drawGrass2);
+            ImGui::Checkbox("Use Grass 3", &drawGrass3);
+            ImGui::Checkbox("Use Grass 4", &drawGrass4);
+            ImGui::Checkbox("Use Flower 1", &drawFlower1);
+            ImGui::Checkbox("Use Flower 2", &drawFlower2);
+            ImGui::Checkbox("Use Flower 3", &drawFlower3);
+            ImGui::Checkbox("Use Flower 4", &drawFlower4);
+            if (drawGrass1) ImGui::SliderFloat("Grass 1 probability", &grass1_density, 0.0, 1.0);
+            if (drawGrass2) ImGui::SliderFloat("Grass 2 probability", &grass2_density, 0.0, 1.0);
+            if (drawGrass3) ImGui::SliderFloat("Grass 3 probability", &grass3_density, 0.0, 1.0);
+            if (drawGrass4) ImGui::SliderFloat("Grass 4 probability", &grass4_density, 0.0, 1.0);
+            if (drawFlower1) ImGui::SliderFloat("Flower 1 probability", &flower1_density, 0.0, 1.0);
+            if (drawFlower2) ImGui::SliderFloat("Flower 2 probability", &flower2_density, 0.0, 1.0);
+            if (drawFlower3) ImGui::SliderFloat("Flower 3 probability", &flower3_density, 0.0, 1.0);
+            if (drawFlower4) ImGui::SliderFloat("Flower 4 probability", &flower4_density, 0.0, 1.0);
+            ImGui::Unindent(32.0f);
+        }
         ImGui::Unindent(32.0f);
     }
     ImGui::End();

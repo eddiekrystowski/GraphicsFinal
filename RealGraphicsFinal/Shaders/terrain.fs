@@ -12,6 +12,8 @@ uniform sampler2D heightMap;
 uniform sampler2D normalMap;
 
 uniform float water_level;
+uniform float gamma;
+uniform bool useGamma;
 
 uniform vec3 cameraPosition;
 
@@ -28,6 +30,12 @@ uniform directionalLight dir_light;
 
 uniform sampler2D shadowMap;
 uniform mat4 lightSpaceMatrix;
+
+uniform vec3 viewPos;
+uniform float fogStart;
+uniform float fogEnd;
+uniform vec4 fogColor;
+uniform bool useFog;
 
 vec3 directional(sampler2D sampler, vec3 patchNormal, int textureTiling) {
     vec4 FragPosLightSpace = lightSpaceMatrix * position;
@@ -88,6 +96,9 @@ vec3 directional(sampler2D sampler, vec3 patchNormal, int textureTiling) {
 
 void main()
 {   
+    //calculate fog
+    float fog = clamp( (  length(position.xyz - viewPos) / (fogEnd - fogStart)), 0.0, 1.0);
+
     if (texCoord.x <= 1.0/256.0 || texCoord.x >= 255.0/256.0) discard;
     if (texCoord.y <= 1.0/256.0 || texCoord.y >= 255.0/256.0) discard;
 
@@ -108,5 +119,8 @@ void main()
     } else {
         FragColor = vec4(directional(cliffTexture, normal, 10), 1.0);
     }
+
+    if (useFog)  FragColor = mix(FragColor, fogColor, fog);
+    if (useGamma) FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
     
 }

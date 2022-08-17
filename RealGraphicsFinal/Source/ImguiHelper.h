@@ -44,7 +44,11 @@ public:
     static float grass_height_factor;
     static float windspeed;
     static float windstrength;
-    static bool showBackgrounds;;
+    static bool showBackgrounds;
+    static float gamma;
+    static bool useGamma;
+    static bool grassBlend;
+    static bool useFog;
 
     //helper functions
     static void initialize();

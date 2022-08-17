@@ -50,9 +50,13 @@ uniform vec3 lightPos;
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec4 fogColor;
+uniform bool useFog;
 
 uniform sampler2D shadowMap;
 uniform sampler2D normalMap;
+
+uniform float gamma;
+uniform bool useGamma;
 
 vec3 directional() {
     if (texture(material.texture_diffuse1, TexCoords).a <0.5) discard;
@@ -140,5 +144,6 @@ void main()
     vec3 total = directional_light + point_lighting;
 
     FragColor = vec4(directional_light, 1.0);
-    //FragColor = mix(vec4(total, 1.0), fogColor, fog);
+    if (useFog) FragColor = mix(vec4(total, 1.0), fogColor, fog);
+    if (useGamma) FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
 }

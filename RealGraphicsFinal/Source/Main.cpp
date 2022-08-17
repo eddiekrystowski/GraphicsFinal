@@ -1995,14 +1995,15 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     treeShader.setVec3("dir_light.specular", glm::vec3(0.0) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * glm::vec3(1.0));
     treeShader.setVec3("dir_light.lightPos", Light::position);
     treeShader.setVec3("dir_light.direction", Light::direction);
-    //point lighting
     treeShader.setInt("num_points", 0);
-
     treeShader.setVec3("viewPos", camera->GetPosition());
     treeShader.setFloat("fogStart", ImguiHelper::fogStart);
     treeShader.setFloat("fogEnd", ImguiHelper::fogEnd);
     treeShader.setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3] ));
-
+    treeShader.setFloat("fogStart", ImguiHelper::fogStart);
+    treeShader.setFloat("fogEnd", ImguiHelper::fogEnd);
+    treeShader.setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    treeShader.setVec3("viewPos", camera->GetPosition());
     tree->drawInstances(treeShader, 50);
     glUseProgram(0);
 
@@ -2010,8 +2011,6 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     // reset viewport
     glViewport(0, 0, Window::Width, Window::Height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
 
 
     /**********************************************************
@@ -2029,14 +2028,34 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     waterFrameBuffer->BindReflectionBuffer();
     waterFrameBuffer->Clear();
     //enable clip plane
+    glCheckError();
     terrain->shader->use();
     terrain->shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
     terrain->shader->setInt("shadowMap", 5);
+    terrain->shader->setFloat("fogStart", ImguiHelper::fogStart);
+    terrain->shader->setFloat("fogEnd", ImguiHelper::fogEnd);
+    terrain->shader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    terrain->shader->setVec3("viewPos", camera->GetPosition());
+    terrain->shader->setBool("useFog", ImguiHelper::useFog);
+    terrain->grassShader->use();
+    terrain->grassShader->setFloat("fogStart", ImguiHelper::fogStart);
+    terrain->grassShader->setFloat("fogEnd", ImguiHelper::fogEnd);
+    terrain->grassShader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    terrain->grassShader->setVec3("viewPos", camera->GetPosition());
+    terrain->grassShader->setBool("useFog", ImguiHelper::useFog);
+
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, depthMap);
+    glCheckError();
     terrain->Render(camera, deltaTime);
+    glCheckError();
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, 1, 0, 0));
+    shader->setFloat("fogStart", ImguiHelper::fogStart);
+    shader->setFloat("fogEnd", ImguiHelper::fogEnd);
+    shader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    shader->setVec3("viewPos", camera->GetPosition());
+    shader->setBool("useFog", ImguiHelper::useFog);
     model = glm::mat4(1.0);
     model = glm::translate(model, cubePos);
     shader->setFloat("textureTiling", 1);
@@ -2047,13 +2066,17 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     shader->setMat4("view", camera->GetViewMatrix());
     shader->setMat4("model", model);
     shader->setInt("textureSampler", 0);
+    glCheckError();
     renderCube(cubeTexture, true, glm::vec4(0, 1, 0, 0));
+    glCheckError();
     model = glm::mat4(1.0);
     model = glm::translate(model, castlePos);
     model = glm::scale(model, glm::vec3(castleScale));
     model = glm::rotate(model, glm::radians(castleRotAngle), castleRot);
     shader->setMat4("model", model);
+    glCheckError();
     castle->draw(*shader);
+    glCheckError();
     glUseProgram(0);
     //disable clip plane
     treeShader.use();
@@ -2067,6 +2090,7 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     treeShader.setVec3("dir_light.specular", glm::vec3(0.0) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * glm::vec3(1.0));
     treeShader.setVec3("dir_light.lightPos", Light::position);
     treeShader.setVec3("dir_light.direction", Light::direction);
+    treeShader.setBool("useFog", ImguiHelper::useFog);
     //point lighting
     treeShader.setInt("num_points", 0);
 
@@ -2074,7 +2098,9 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     treeShader.setFloat("fogStart", ImguiHelper::fogStart);
     treeShader.setFloat("fogEnd", ImguiHelper::fogEnd);
     treeShader.setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    glCheckError();
     tree->drawInstances(treeShader, 50);
+    glCheckError();
     glUseProgram(0);
     waterFrameBuffer->UnbindBuffer();
 
@@ -2084,7 +2110,7 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     camera->SetPosition(cameraPos);
     camera->SetPitch(pitch);
 
-
+    glCheckError();
     /**********************************************************
     *******  RENDER PASS 3 -- WATER REFRACTION TEXTURE  *******
     ***********************************************************/
@@ -2154,6 +2180,19 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     terrain->shader->use();
     terrain->shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
     terrain->shader->setInt("shadowMap", 5);
+    terrain->shader->setFloat("gamma", ImguiHelper::gamma);
+    terrain->shader->setBool("useGamma", ImguiHelper::useGamma);
+    terrain->shader->setFloat("fogStart", ImguiHelper::fogStart);
+    terrain->shader->setFloat("fogEnd", ImguiHelper::fogEnd);
+    terrain->shader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    terrain->shader->setVec3("viewPos", camera->GetPosition());
+    terrain->grassShader->use();
+    terrain->grassShader->setFloat("gamma",ImguiHelper::gamma);
+    terrain->grassShader->setBool("useGamma", ImguiHelper::useGamma);
+    terrain->grassShader->setFloat("fogStart", ImguiHelper::fogStart);
+    terrain->grassShader->setFloat("fogEnd", ImguiHelper::fogEnd);
+    terrain->grassShader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    terrain->grassShader->setVec3("viewPos", camera->GetPosition());
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, depthMap);
     terrain->Render(camera, deltaTime);    
@@ -2171,6 +2210,10 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     shader->setMat4("view", camera->GetViewMatrix());
     shader->setMat4("model", model);
     shader->setInt("textureSampler", 0);
+    shader->setFloat("fogStart", ImguiHelper::fogStart);
+    shader->setFloat("fogEnd", ImguiHelper::fogEnd);
+    shader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    shader->setVec3("viewPos", camera->GetPosition());
     renderCube(cubeTexture, true, glm::vec4(0, -1, 0, 0));
 
     //Render Castle
@@ -2184,6 +2227,13 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     directionalShader->setMat4("view", camera->GetViewMatrix());
     directionalShader->setMat4("projection", camera->GetProjectionMatrix());
     directionalShader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    directionalShader->setFloat("gamma", ImguiHelper::gamma);
+    directionalShader->setBool("useGamma", ImguiHelper::useGamma);
+    directionalShader->setFloat("fogStart", ImguiHelper::fogStart);
+    directionalShader->setFloat("fogEnd", ImguiHelper::fogEnd);
+    directionalShader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    directionalShader->setVec3("viewPos", camera->GetPosition());
+    directionalShader->setBool("useFog", ImguiHelper::useFog);
     directionalShader->setVec3("lightPos", Light::position);
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, castleNormal);
@@ -2202,6 +2252,7 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     treeShader.setVec3("dir_light.ambient", ambientColor);
     treeShader.setVec3("dir_light.diffuse", diffuseColor);
     treeShader.setVec3("dir_light.specular", glm::vec3(0.0)* glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2])* glm::vec3(1.0));
+    treeShader.setVec3("dir_light.specular", glm::vec3(0.0)* glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2])* glm::vec3(1.0));
     treeShader.setVec3("dir_light.lightPos", Light::position);
     treeShader.setVec3("dir_light.direction", Light::direction);
     //point lighting
@@ -2210,14 +2261,23 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     treeShader.setFloat("fogStart", ImguiHelper::fogStart);
     treeShader.setFloat("fogEnd", ImguiHelper::fogEnd);
     treeShader.setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+    treeShader.setVec3("viewPos", camera->GetPosition());
+    treeShader.setFloat("gamma", ImguiHelper::gamma);
+    treeShader.setBool("useGamma", ImguiHelper::useGamma);
+
     tree->drawInstances(treeShader, 50);
     glUseProgram(0);
     glActiveTexture(GL_TEXTURE0);
 
     //Render Water
+    water->GetShader()->use();
+    water->GetShader()->setFloat("gamma", ImguiHelper::gamma);
+    water->GetShader()->setBool("useGamma", ImguiHelper::useGamma);
+    water->GetShader()->setVec3("viewPos", camera->GetPosition());
+    water->GetShader()->setFloat("fogStart", ImguiHelper::fogStart);
+    water->GetShader()->setFloat("fogEnd", ImguiHelper::fogEnd);
+    water->GetShader()->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
     water->Render(camera, waterFrameBuffer);
-
-    glCheckError();
 }
 
 
