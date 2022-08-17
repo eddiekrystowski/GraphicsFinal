@@ -1740,7 +1740,26 @@ int main()
         debugDepthQuad->setFloat("far_plane", far_plane);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, depthMap);
-        //renderQuad();
+        //renderQuad();\
+
+        if (ImguiHelper::drawSkybox) {
+            // draw skybox as last
+            glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+            skyboxShader->use();
+            glm::mat4 view = glm::mat4(glm::mat3(camera->GetViewMatrix())); // remove translation from the view matrix
+            skyboxShader->setMat4("view", view);
+            skyboxShader->setMat4("projection", camera->GetProjectionMatrix());
+            skyboxShader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
+            skyboxShader->setFloat("fogStart", ImguiHelper::fogStart);
+            skyboxShader->setFloat("fogEnd", ImguiHelper::fogEnd);
+            // skybox cube
+            glBindVertexArray(skyboxVAO);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindVertexArray(0);
+            glDepthFunc(GL_LESS); // set depth function back to default
+        }
 
         ImguiHelper::createFrame();
 
@@ -1796,24 +1815,6 @@ int main()
                 lightPos[2]                                                    // z coordinate
             );
         }
-       
-
-        // draw skybox as last
-        glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-        skyboxShader->use();
-        glm::mat4 view = glm::mat4(glm::mat3(camera->GetViewMatrix())); // remove translation from the view matrix
-        skyboxShader->setMat4("view", view);
-        skyboxShader->setMat4("projection", camera->GetProjectionMatrix());
-        skyboxShader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]) );
-        skyboxShader->setFloat("fogStart", ImguiHelper::fogStart);
-        skyboxShader->setFloat("fogEnd", ImguiHelper::fogEnd);
-        // skybox cube
-        glBindVertexArray(skyboxVAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
-        glDepthFunc(GL_LESS); // set depth function back to default
         
 
         glCheckError();
