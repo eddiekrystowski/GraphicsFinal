@@ -55,7 +55,8 @@ vec3 directional() {
 
     //calculate diffuse
     vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(dir_light.lightPos - FragPos);
+    //vec3 lightDir = normalize(dir_light.lightPos - FragPos);
+    vec3 lightDir = normalize(-dir_light.direction);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = dir_light.diffuse * diff * texture(material.texture_diffuse1, TexCoords).rgb;
 
@@ -127,6 +128,6 @@ void main()
     // combine directional and point lighting
     vec3 total = directional_light + point_lighting;
 
-    FragColor = vec4(total, 1.0);
+    FragColor = vec4(directional_light, 1.0);
     //FragColor = mix(vec4(total, 1.0), fogColor, fog);
 }

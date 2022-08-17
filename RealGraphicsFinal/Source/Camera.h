@@ -27,7 +27,6 @@ private:
 
 	glm::vec3 position, front, worldUp, up, right;
 	float yaw, pitch;
-	glm::mat4 viewMatrix;
 
 	
 	float MovementSpeed;
@@ -37,6 +36,8 @@ private:
 	void UpdateVectors();
 
 public:
+	glm::mat4 viewMatrix;
+
 	Camera();
 	Camera(Projection projection, float size, float aspectRatio, float nearClip = 0.1f, float farClip = 1000.0f);
 
@@ -73,6 +74,7 @@ public:
 
 	bool paused = false;
 
+	glm::vec3 GetDirection();
 private:
 	void ResetCamera();
 	void SetOrthographic(float size, float aspectRatio, float nearClip = 0.1f, float farClip = 1000.0f);

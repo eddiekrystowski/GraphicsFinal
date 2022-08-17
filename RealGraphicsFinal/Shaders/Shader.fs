@@ -19,6 +19,9 @@ uniform sampler2D textureSampler;
 
 out vec4 outColor;
 
+uniform sampler2D shadowMap;
+
+
 vec4 CalculateAmbientColor() {
 	vec4 ambientColor = vec4(directionalLight.color, 1.0f) * directionalLight.intensity;
 

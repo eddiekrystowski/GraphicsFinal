@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include <glm\gtc\matrix_transform.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 #include <cstdio>
 
 Camera::Camera() {
@@ -150,6 +151,16 @@ void Camera::SetPerspective(float fieldOfView, float aspectRatio, float nearClip
 	//projectionMatrix = glm::infinitePerspective(fieldOfView, aspectRatio, nearClip);
 }
 
+
+glm::vec3 Camera::GetDirection() {
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::translate(model, GetPosition());
+	//glm::mat4 modelView = model * GetViewMatrix();
+	//return glm::vec3(modelView[2][0], modelView[2][1], modelView[2][2]);
+	const glm::mat4 inverted = glm::inverse(model);
+	const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
+	return this->front;
+}
 
 // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
 void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime) {
