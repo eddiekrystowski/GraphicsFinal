@@ -6,6 +6,7 @@ out GS_OUT {
 	vec2 textureCoords;
 	float color_variance;
 	float value;
+	vec3 position;
 } gs_out;
 
 in vec4 position[];
@@ -28,6 +29,7 @@ uniform float windspeed;
 uniform float min_grass_height;
 uniform float grass_height_factor;
 
+uniform bool renderGrass;
 uniform float grass1_density;
 uniform float grass2_density;
 uniform float grass3_density;
@@ -103,17 +105,17 @@ bool texturesUsed() {
 	return drawGrass1 || drawGrass2 || drawGrass3 || drawGrass4 || drawFlower1 || drawFlower2 || drawFlower3 || drawFlower4; 
 }
 
-void createQuad(vec4 position,float angle) {
+void createQuad(vec4 aposition,float angle) {
 	//rotation matrix
 	mat4 rotation = rotateY(angle);
 	//add randomness to rotation
-	mat4 randomness = rotateY(180*random(position.xz));
+	mat4 randomness = rotateY(180*random(aposition.xz));
 	//generate height
-	float growth_factor = random(position.xz) * (1.0 - min_grass_height) + min_grass_height;
+	float growth_factor = random(aposition.xz) * (1.0 - min_grass_height) + min_grass_height;
 
 	//get wind
 	vec2 windDirection = vec2(1.0, 1.0); 	
-	vec2 uv = position.xz/10.0 + windDirection * windspeed * time;
+	vec2 uv = aposition.xz/10.0 + windDirection * windspeed * time;
 	uv.x = mod(uv.x,1.0); 
 	uv.y = mod(uv.y,1.0);
 	vec4 wind = texture(windMap, uv); 
@@ -124,8 +126,8 @@ void createQuad(vec4 position,float angle) {
 
 	//positions
 	vec4 offsets[4];
-	float randX = (random(position.xz) - 0.5);
-	float randZ = (random(position.zx) - 0.5);
+	float randX = (random(aposition.xz) - 0.5);
+	float randZ = (random(aposition.zx) - 0.5);
 	offsets[0] = vec4(-0.5 + randX, 0.0, randZ, 0.0);
 	offsets[1] = vec4( 0.5 + randX, 0.0, -randZ, 0.0);	
 	offsets[2] = vec4(-0.5 + randX, 1.0 * growth_factor * grass_height_factor, randZ, 0.0);
@@ -135,7 +137,7 @@ void createQuad(vec4 position,float angle) {
 	vec2 texCoords[4];
 	if (useMultipleTextures) {
 		float totalDensity = calculateTotalDensity();
-			float randFloat = totalDensity*random(position.xz);
+			float randFloat = totalDensity*random(aposition.xz);
 			if (randFloat < threshold(1)) {
 				texCoords[0] = vec2(0.0, 0.5); // bottom left
 				texCoords[1] = vec2(0.25 , 0.5); // bottom right
@@ -207,13 +209,15 @@ void createQuad(vec4 position,float angle) {
 		gl_Position = gl_in[0].gl_Position + projection * view * model * (vec4(0.0, 0.0, 0.0, 1.0) + wind_rotation * randomness * rotation * offsets[i]);
 		//set texture coordinates
 		gs_out.textureCoords = texCoords[i];
-		gs_out.color_variance = fbm(position.xz);
+		gs_out.color_variance = fbm(aposition.xz);
+		gs_out.position = vec3(aposition);
 		EmitVertex();
 	}
 	EndPrimitive();
 }
 
 void main() {
+	if (!renderGrass) return;
 	if (position[0].y < waterlevel) return;
 	if (texture(pathTexture, texCoord[0]).r > 0.2)  return;
 	if (texCoord[0].x <= 1.0/256.0 || texCoord[0].x >= 255.0/256.0) return;

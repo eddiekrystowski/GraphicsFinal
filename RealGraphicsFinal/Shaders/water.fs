@@ -23,9 +23,20 @@ uniform vec3 lightColor;
 uniform float near;
 uniform float far;
 
+uniform float gamma;
+uniform bool useGamma;
+
+uniform vec3 viewPos;
+uniform float fogStart;
+uniform float fogEnd;
+uniform vec4 fogColor;
+uniform bool useFog;
+
 out vec4 outColor;
 
 void main() {
+	//calculate fog
+    float fog = clamp( (  length(In.worldPosition.xyz - viewPos) / (fogEnd - fogStart)), 0.0, 1.0);
 	// calculate texture coordinates based on ndc coordinates
 	vec2 normalizedDeviceCoord = (In.worldPosition.xy / In.worldPosition.w) / 2.0 + 0.5;
 	vec2 reflectionTextureCoord = vec2(normalizedDeviceCoord.x, -normalizedDeviceCoord.y);
@@ -79,4 +90,8 @@ void main() {
 	outColor = mix(reflectColor, refractColor, refractiveFactor);
 	outColor = mix(outColor, vec4(0.0, 0.3, 0.5, 1.0), 0.2) + vec4(specularHighlights, 0);
 	outColor.a = clamp(waterDepth / 5.0, 0.0, 1.0);
+
+	if (useFog) outColor = mix(outColor, fogColor, 0.4 * fog);
+	if (useGamma) outColor.rgb = pow(outColor.rgb, vec3(1.0/gamma));
+	
 }

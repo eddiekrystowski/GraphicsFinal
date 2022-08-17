@@ -42,6 +42,9 @@ uniform directionalLight dir_light;
 uniform Material material;
 uniform vec3 viewPos;
 
+uniform float gamma;
+uniform bool useGamma;
+
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec4 fogColor;
@@ -127,4 +130,5 @@ void main()
     vec3 total = directional_light + point_lighting;
     FragColor = vec4(total, 1.0);
     //FragColor = mix(vec4(total, 1.0), fogColor, fog);
+    if (useGamma)  FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
 }

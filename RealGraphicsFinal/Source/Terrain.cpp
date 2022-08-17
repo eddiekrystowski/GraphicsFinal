@@ -166,12 +166,13 @@ void Terrain::Render(Camera* camera, float deltaTime) {
 
 void Terrain::DrawGrass(Camera* camera, float deltaTime) {
 
-    //glEnable(GL_BLEND);
+    if (ImguiHelper::grassBlend) glEnable(GL_BLEND);
     //glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     grassShader->use();
     grassShader->setFloat("time", glfwGetTime());
     //settings from imgui
+    grassShader->setBool("renderGrass", ImguiHelper::renderGrass);
     grassShader->setBool("useWind", ImguiHelper::wind);
     grassShader->setBool("useMultipleTextures", ImguiHelper::multipleTextures);
     grassShader->setFloat("windspeed", ImguiHelper::windspeed);
@@ -218,7 +219,7 @@ void Terrain::DrawGrass(Camera* camera, float deltaTime) {
     glBindVertexArray(VAO);
     glDrawArrays(GL_PATCHES, 0, 4 * Terrain::resolution * Terrain::resolution);
 
-    //glDisable(GL_BLEND);
+    if (ImguiHelper::grassBlend) glDisable(GL_BLEND);
 }
 
 
