@@ -49,6 +49,7 @@ uniform vec4 fogColor;
 uniform sampler2D shadowMap;
 
 vec3 directional() {
+    if (texture(material.texture_diffuse1, TexCoords).a <0.5) discard;
     //calculate ambient
     vec3 ambient = dir_light.ambient * texture(material.texture_diffuse1, TexCoords).rgb;
 
