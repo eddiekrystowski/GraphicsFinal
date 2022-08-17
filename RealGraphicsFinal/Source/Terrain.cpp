@@ -168,7 +168,7 @@ void Terrain::DrawGrass(Camera* camera, float deltaTime) {
 
     if (ImguiHelper::grassBlend) glEnable(GL_BLEND);
     //glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     grassShader->use();
     grassShader->setFloat("time", glfwGetTime());
     //settings from imgui
