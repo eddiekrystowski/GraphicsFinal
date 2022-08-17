@@ -27,6 +27,24 @@ struct directionalLight {
 uniform directionalLight dir_light;
 
 vec3 directional(sampler2D sampler, vec3 patchNormal, int textureTiling) {
+
+    vec3 ambient = dir_light.ambient * texture(sampler, texCoord*textureTiling).rgb;
+
+    vec3 norm = normalize(patchNormal);
+    vec3 lightDir = normalize(-dir_light.direction);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = dir_light.diffuse * diff * texture(sampler, texCoord*textureTiling).rgb;
+
+    vec3 viewDir = normalize(cameraPosition - vec3(position));
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = dir_light.specular * spec * texture(sampler, texCoord*textureTiling).rgb;  
+
+
+    vec3 result = ambient + diffuse + specular;
+    return result;
+    //FragColor = vec4(result, 1.0);
+    /*
     //calculate ambient
     vec3 ambient = dir_light.ambient * texture(sampler, texCoord*textureTiling).rgb;
 
@@ -35,7 +53,8 @@ vec3 directional(sampler2D sampler, vec3 patchNormal, int textureTiling) {
     bumpMapNormal = normalize(bumpMapNormal * 2.0 - 1.0); 
     vec3 normal = (bumpMapNormal - vec3(0.0, 0.0, 1.0)) + patchNormal;
     normal = patchNormal;
-    vec3 lightDir = normalize(dir_light.lightPos - vec3(position));
+    //vec3 lightDir = normalize(dir_light.lightPos - vec3(position));
+    vec3 lightDir = normalize(dir_light.direction);
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = dir_light.diffuse * diff * texture(sampler, texCoord*textureTiling).rgb;
 
@@ -46,6 +65,7 @@ vec3 directional(sampler2D sampler, vec3 patchNormal, int textureTiling) {
     float spec = 0.0f;
           spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
     vec3 specular = dir_light.specular * spec * texture(sampler, texCoord*textureTiling).rgb;
+    */
 
     /*
     vec3 projCoords = FragPosLightSpace.xyz / FragPosLightSpace.w;
@@ -58,7 +78,7 @@ vec3 directional(sampler2D sampler, vec3 patchNormal, int textureTiling) {
         shadow = 0.0;
     */
 
-    return (ambient  + /*  (1-shadow) * */  (diffuse + specular));
+    //return (ambient  + /*  (1-shadow) * */  (diffuse + specular));
 }
 
 

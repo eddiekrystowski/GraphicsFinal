@@ -1366,10 +1366,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         if (camera->paused) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
+
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+        std::cout << "Camera Position:\n\tx: " << camera->GetPosition().x << "\n\ty: " << camera->GetPosition().y << "\n\tz: " << camera->GetPosition().z << std::endl;
+        glm::vec3 cameraDir = camera->GetDirection();
+        std::cout << "Camera Direction:\n\tx: " << cameraDir.x << "\n\ty: " << cameraDir.y << "\n\tz: " << cameraDir.z << std::endl;
+    }
 }
 
 
-void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain);
+void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain, Model* castle);
 void renderCube(unsigned int texture, bool clipPlaneEnabled, glm::vec4 clipPlane = glm::vec4(0, 0, 0, 0));
 
 int main()
@@ -1506,6 +1512,9 @@ int main()
     water->textureTiling = 4;
     water->distorsionStrength = 0.04f;
 
+    Model* castle = new Model("./Models/castle_no_ground.obj");
+
+
  
 
     
@@ -1538,7 +1547,7 @@ int main()
         glClearColor(0.5f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        renderScene(shader, waterDudv, waterFrameBuffer, water, terrain);
+        renderScene(shader, waterDudv, waterFrameBuffer, water, terrain, castle);
 
         ImguiHelper::createFrame();
 
@@ -1708,13 +1717,18 @@ void renderCube(unsigned int texture, bool clipPlaneEnabled, glm::vec4 clipPlane
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain) {
+void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* waterFrameBuffer, Water* water, Terrain* terrain, Model* castle) {
 
     glm::vec3 skyColor = glm::vec3(0.815f, 0.925f, 0.992f);
     glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::vec3 cubePos = glm::vec3(0, 2, 0);
+    glm::vec3 castlePos = glm::vec3(115, 53.5, 10);
+    glm::vec3 castleRot = glm::vec3(0, 1, 0);
+    float castleRotAngle = 60.0f;
+    float castleScale = 0.3f;
+    float castleYScale = 0.5f;
 
     glm::vec3 cameraPos = camera->GetPosition();
     float pitch = camera->GetPitch();
@@ -1742,6 +1756,12 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     shader->setMat4("gWorld", model);
     shader->setInt("textureSampler", 0);
     renderCube(cubeTexture, true, glm::vec4(0, 1, 0, 0));
+    model = glm::mat4(1.0);
+    model = glm::translate(model, castlePos);
+    model = glm::scale(model, glm::vec3(castleScale));
+    model = glm::rotate(model, glm::radians(castleRotAngle), castleRot);
+    shader->setMat4("gWorld", model);
+    castle->draw(*shader);
     glUseProgram(0);
     //disable clip plane
     waterFrameBuffer->UnbindBuffer();
@@ -1776,6 +1796,12 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     shader->setMat4("gWorld", model);
     shader->setInt("textureSampler", 0);
     renderCube(cubeTexture, true, glm::vec4(0, -1, 0, 0));
+    model = glm::mat4(1.0);
+    model = glm::translate(model, castlePos);
+    model = glm::scale(model, glm::vec3(castleScale));
+    model = glm::rotate(model, glm::radians(castleRotAngle), castleRot);
+    shader->setMat4("gWorld", model);
+    castle->draw(*shader);
     glUseProgram(0);
     waterFrameBuffer->UnbindBuffer();
 
@@ -1794,6 +1820,12 @@ void renderScene(Shader* shader, unsigned int cubeTexture, WaterFrameBuffer* wat
     shader->setMat4("gWorld", model);
     shader->setInt("textureSampler", 0);
     renderCube(cubeTexture, true, glm::vec4(0, -1, 0, 0));
+    model = glm::mat4(1.0);
+    model = glm::translate(model, castlePos);
+    model = glm::scale(model, glm::vec3(castleScale));
+    model = glm::rotate(model, glm::radians(castleRotAngle), castleRot);
+    shader->setMat4("gWorld", model);
+    castle->draw(*shader);
     glUseProgram(0);
 
 

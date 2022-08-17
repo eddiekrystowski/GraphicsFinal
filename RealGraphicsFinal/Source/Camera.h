@@ -73,6 +73,7 @@ public:
 
 	bool paused = false;
 
+	glm::vec3 GetDirection();
 private:
 	void ResetCamera();
 	void SetOrthographic(float size, float aspectRatio, float nearClip = 0.1f, float farClip = 1000.0f);

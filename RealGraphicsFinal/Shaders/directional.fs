@@ -55,6 +55,7 @@ vec3 directional() {
     //calculate diffuse
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(dir_light.lightPos - FragPos);
+    //vec3 lightDir = normalize(-dir_light.direction);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = dir_light.diffuse * diff * texture(material.texture_diffuse1, TexCoords).rgb;
 
