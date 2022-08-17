@@ -1809,6 +1809,9 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     float castleYScale = 0.5f;
 
 
+    /**********************************************************
+    *******        RENDER PASS 1 -- DEPTH BUFFER        *******
+    ***********************************************************/
     //render scene to depth fbo
     glm::mat4 lightProjection;
     glm::mat4 lightSpaceMatrix;
@@ -1842,9 +1845,9 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     shader->setVec3("directionalLight.color", Light::color);
     shader->setFloat("directionalLight.intensity", Light::intensity);
     shader->setVec3("directionalLight.direction", Light::direction);
-    shader->setMat4("gProj", depthCam->GetProjectionMatrix());
-    shader->setMat4("gCamera", depthCam->GetViewMatrix());
-    shader->setMat4("gWorld", model);
+    shader->setMat4("projection", depthCam->GetProjectionMatrix());
+    shader->setMat4("view", depthCam->GetViewMatrix());
+    shader->setMat4("model", model);
     shader->setInt("textureSampler", 0);
     castle->draw(*shader);
     
@@ -1854,6 +1857,9 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     treeShader.setMat4("view", camera->GetViewMatrix());
     treeShader.setMat4("projection", camera->GetProjectionMatrix());
     //set directional lighitng
+    glm::vec3 lightLevel = glm::vec3(1.0);
+    glm::vec3 diffuseColor = glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * lightLevel;
+    glm::vec3 ambientColor = diffuseColor * glm::vec3(0.7);
     treeShader.setVec3("dir_light.ambient", ambientColor);
     treeShader.setVec3("dir_light.diffuse", diffuseColor);
     treeShader.setVec3("dir_light.specular", glm::vec3(0.0) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * glm::vec3(1.0));
@@ -1878,6 +1884,9 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
 
 
 
+    /**********************************************************
+    *******  RENDER PASS 2 -- WATER REFLECTION TEXTURE  *******
+    ***********************************************************/
     glm::vec3 cameraPos = camera->GetPosition();
     float pitch = camera->GetPitch();
 
@@ -1904,16 +1913,16 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     shader->setVec3("directionalLight.color", Light::color);
     shader->setFloat("directionalLight.intensity", Light::intensity);
     shader->setVec3("directionalLight.direction", Light::direction);
-    shader->setMat4("gProj", camera->GetProjectionMatrix());
-    shader->setMat4("gCamera", camera->GetViewMatrix());
-    shader->setMat4("gWorld", model);
+    shader->setMat4("projection", camera->GetProjectionMatrix());
+    shader->setMat4("view", camera->GetViewMatrix());
+    shader->setMat4("model", model);
     shader->setInt("textureSampler", 0);
     renderCube(cubeTexture, true, glm::vec4(0, 1, 0, 0));
     model = glm::mat4(1.0);
     model = glm::translate(model, castlePos);
     model = glm::scale(model, glm::vec3(castleScale));
     model = glm::rotate(model, glm::radians(castleRotAngle), castleRot);
-    shader->setMat4("gWorld", model);
+    shader->setMat4("model", model);
     castle->draw(*shader);
     glUseProgram(0);
     //disable clip plane
@@ -1923,9 +1932,6 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     treeShader.setMat4("view", camera->GetViewMatrix());
     treeShader.setMat4("projection", camera->GetProjectionMatrix());
     //set directional lighitng
-    glm::vec3 lightLevel = glm::vec3(1.0);
-    glm::vec3 diffuseColor = glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * lightLevel;
-    glm::vec3 ambientColor = diffuseColor * glm::vec3(0.7);
     treeShader.setVec3("dir_light.ambient", ambientColor);
     treeShader.setVec3("dir_light.diffuse", diffuseColor);
     treeShader.setVec3("dir_light.specular", glm::vec3(0.0) * glm::vec3(ImguiHelper::lightColor[0], ImguiHelper::lightColor[1], ImguiHelper::lightColor[2]) * glm::vec3(1.0));
@@ -1948,15 +1954,21 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     camera->SetPosition(cameraPos);
     camera->SetPitch(pitch);
 
-    // Render the scene in the refraction buffer
+
+    /**********************************************************
+    *******  RENDER PASS 3 -- WATER REFRACTION TEXTURE  *******
+    ***********************************************************/
     waterFrameBuffer->BindRefractionBuffer();
     waterFrameBuffer->Clear();
+    //Render terrain
     terrain->shader->use();
     terrain->shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
     terrain->shader->setInt("shadowMap", 5);
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, depthMap);
     terrain->Render(camera, deltaTime);
+
+    //Render Cube and Castle
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, -1, 0, 0));
     model = glm::mat4(1.0);
@@ -1965,19 +1977,19 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     shader->setVec3("directionalLight.color", Light::color);
     shader->setFloat("directionalLight.intensity", Light::intensity);
     shader->setVec3("directionalLight.direction", Light::direction);
-    shader->setMat4("gProj", camera->GetProjectionMatrix());
-    shader->setMat4("gCamera", camera->GetViewMatrix());
-    shader->setMat4("gWorld", model);
+    shader->setMat4("projection", camera->GetProjectionMatrix());
+    shader->setMat4("view", camera->GetViewMatrix());
+    shader->setMat4("model", model);
     shader->setInt("textureSampler", 0);
     renderCube(cubeTexture, true, glm::vec4(0, -1, 0, 0));
-    
     model = glm::mat4(1.0);
     model = glm::translate(model, castlePos);
     model = glm::scale(model, glm::vec3(castleScale));
     model = glm::rotate(model, glm::radians(castleRotAngle), castleRot);
-    shader->setMat4("gWorld", model);
+    shader->setMat4("model", model);
     castle->draw(*shader);
 
+    //Render Trees
     treeShader.use();
     model = glm::mat4(1.0);
     treeShader.setMat4("model", model);
@@ -1991,7 +2003,6 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     treeShader.setVec3("dir_light.direction", Light::direction);
     //point lighting
     treeShader.setInt("num_points", 0);
-
     treeShader.setVec3("viewPos", camera->GetPosition());
     treeShader.setFloat("fogStart", ImguiHelper::fogStart);
     treeShader.setFloat("fogEnd", ImguiHelper::fogEnd);
@@ -2005,12 +2016,19 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     glCheckError();
 
 
+
+    /**********************************************************
+    *******        RENDER PASS 4 -- NORMAL RENDER       *******
+    ***********************************************************/
+    //Render terrain
     terrain->shader->use();
     terrain->shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
     terrain->shader->setInt("shadowMap", 5);
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, depthMap);
     terrain->Render(camera, deltaTime);    
+
+    //Render cube
     shader->use();
     shader->setVec4("clipPlane", glm::vec4(0, 0, 0, 0));
     model = glm::mat4(1.0);
@@ -2019,12 +2037,13 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     shader->setVec3("directionalLight.color", Light::color);
     shader->setFloat("directionalLight.intensity", Light::intensity);
     shader->setVec3("directionalLight.direction", Light::direction);
-    shader->setMat4("gProj", camera->GetProjectionMatrix());
-    shader->setMat4("gCamera", camera->GetViewMatrix());
-    shader->setMat4("gWorld", model);
+    shader->setMat4("projection", camera->GetProjectionMatrix());
+    shader->setMat4("view", camera->GetViewMatrix());
+    shader->setMat4("model", model);
     shader->setInt("textureSampler", 0);
     renderCube(cubeTexture, true, glm::vec4(0, -1, 0, 0));
 
+    //Render Castle
     directionalShader->use();
     model = glm::mat4(1.0);
     model = glm::translate(model, castlePos);
@@ -2039,6 +2058,7 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     glBindTexture(GL_TEXTURE_2D, depthMap);
     castle->draw(*directionalShader);
 
+    //Render Trees
     treeShader.use();
     model = glm::mat4(1.0);
     treeShader.setMat4("model", model);
@@ -2052,17 +2072,15 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     treeShader.setVec3("dir_light.direction", Light::direction);
     //point lighting
     treeShader.setInt("num_points", 0);
-
     treeShader.setVec3("viewPos", camera->GetPosition());
     treeShader.setFloat("fogStart", ImguiHelper::fogStart);
     treeShader.setFloat("fogEnd", ImguiHelper::fogEnd);
     treeShader.setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
     tree->drawInstances(treeShader, 50);
-
     glUseProgram(0);
     glActiveTexture(GL_TEXTURE0);
 
-
+    //Render Water
     water->Render(camera, waterFrameBuffer);
 
     glCheckError();

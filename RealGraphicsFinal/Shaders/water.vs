@@ -2,9 +2,9 @@
 
 #version 430
 
-uniform mat4 gWorld;
-uniform mat4 gProj;
-uniform mat4 gCamera;
+uniform mat4 model;
+uniform mat4 projection;
+uniform mat4 view;
 
 layout (location = 0) in vec4 inPosition;
 layout (location = 1) in vec3 inNormal;
@@ -24,10 +24,10 @@ uniform vec3 cameraPosition;
 uniform vec3 lightPosition;
 
 void main() {
-	vec4 worldPosition = gWorld * inPosition;
-	vec4 positionRelativeToCamera = gCamera * worldPosition;
+	vec4 worldPosition = model * inPosition;
+	vec4 positionRelativeToCamera = view * worldPosition;
 
-	Out.worldPosition = gProj * positionRelativeToCamera;
+	Out.worldPosition = projection * positionRelativeToCamera;
 	Out.textureCoord = inTextureCoord * textureTiling;
 	Out.normal = inNormal;
 	Out.toCamera = cameraPosition - worldPosition.xyz;

@@ -116,11 +116,11 @@ void Water::Render(Camera* camera, WaterFrameBuffer* waterFrameBuffer) {
 	shader->setFloat("textureTiling", this->textureTiling);
 	shader->setFloat("distorsionStrength", this->distorsionStrength);
 	shader->setFloat("specularPower", this->specularPower);
-	shader->setMat4("gProj", camera->GetProjectionMatrix());
-	shader->setMat4("gCamera", camera->GetViewMatrix());
+	shader->setMat4("projection", camera->GetProjectionMatrix());
+	shader->setMat4("view", camera->GetViewMatrix());
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(-128, 0, -128));
-	shader->setMat4("gWorld", model);
+	shader->setMat4("model", model);
 
 
 	glDrawElements(GL_TRIANGLES, mesh->num_indices, GL_UNSIGNED_INT, 0);
