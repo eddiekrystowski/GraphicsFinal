@@ -54,7 +54,7 @@ int Model::load(std::string path) {
 	* aiProcessTriangulate : If the model is not comprised completely of triangular faces, convert all primitive shapes to triangles
 	* aiProcess_FlipUVs : flip texture coordinates along the y axis.
 	*/
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_SplitLargeMeshes);
+	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals  | aiProcess_FlipUVs | aiProcess_SplitLargeMeshes | aiProcess_CalcTangentSpace);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 		std::cerr << "ERROR: ASSIMP::" << importer.GetErrorString() << std::endl;
@@ -114,7 +114,18 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 		if (mesh->mTextureCoords[0]) {
 			// mesh contains texture coordinates
 			aiVector3D textureCoords = mesh->mTextureCoords[0][i];
-			vertex.TexCoords = glm::vec2(textureCoords.x, 1 - textureCoords.y);
+			vertex.TexCoords = glm::vec2(textureCoords.x, textureCoords.y);
+			// tangent
+			glm::vec3 vector;
+			vector.x = mesh->mTangents[i].x;
+			vector.y = mesh->mTangents[i].y;
+			vector.z = mesh->mTangents[i].z;
+			vertex.Tangent = vector;
+			// bitangent
+			vector.x = mesh->mBitangents[i].x;
+			vector.y = mesh->mBitangents[i].y;
+			vector.z = mesh->mBitangents[i].z;
+			vertex.Bitangent = vector;
 		}
 		else {
 			std::cout << "No Texture coordinates for Vertex " << i << std::endl;
@@ -140,6 +151,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 
 		std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
 	}
 	// create and return mesh from data
 	return Mesh(vertices, indices, textures);

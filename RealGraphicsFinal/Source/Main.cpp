@@ -1355,6 +1355,7 @@ unsigned int depthMap;
 float near_plane = -10.0f;
 float far_plane = 200;
 
+unsigned int castleNormal;
 
 // camera
 Camera* camera = new Camera(Projection::Perspective, 45, (float) (Window::Width / (float)Window::Height));
@@ -1408,6 +1409,45 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         glm::vec3 cameraDir = camera->GetDirection();
         std::cout << "Camera Direction:\n\tx: " << cameraDir.x << "\n\ty: " << cameraDir.y << "\n\tz: " << cameraDir.z << std::endl;
     }
+}
+
+// loads a cubemap texture from 6 individual texture faces
+// order:
+// +X (right)
+// -X (left)
+// +Y (top)
+// -Y (bottom)
+// +Z (front) 
+// -Z (back)
+// -------------------------------------------------------
+unsigned int loadCubemap(std::vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
 }
 
 
@@ -1464,7 +1504,7 @@ int main()
     //this error can be ignored, the program will compile and run successfully
     glDebugMessageCallback(Debug::GLDebugMessageCallback, NULL);
 
-    camera->SetPosition(glm::vec3(99.6366, 180.265, 97.0331));
+    //camera->SetPosition(glm::vec3(99.6366, 180.265, 97.0331));
 
     // build shader programs and setup uniforms
     // -------------------------
@@ -1476,6 +1516,9 @@ int main()
     Shader* tessHeightMapGrassShader = new Shader("./Shaders/passthrough.vs", "./Shaders/grass.fs", "./Shaders/grass.gs", "./Shaders/tessellation.tesc", "./Shaders/tessellation.tese");
     Shader* treeShader = new Shader("./Shaders/treeShader.vs", "./Shaders/directional.fs", nullptr, nullptr, nullptr);
     Shader* simpleDepthShader = new Shader("./Shaders/depthShader.vs", "./Shaders/depthShader.fs", nullptr, nullptr, nullptr);
+    Shader* skyboxShader = new Shader("./Shaders/skybox.vs", "./Shaders/skybox.fs");
+
+
 
     tessHeightMapGrassShader->use();
     tessHeightMapGrassShader->setInt("grass_texture", 0);
@@ -1514,6 +1557,7 @@ int main()
     directionalShader->use();
     directionalShader->setInt("num_points", 0);
     directionalShader->setInt("shadowMap", 4);
+    directionalShader->setInt("normalMap", 3);
     directionalShader->setInt("fogEnd", ImguiHelper::fogEnd);
     directionalShader->setInt("fogStart", ImguiHelper::fogStart);
     directionalShader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
@@ -1523,6 +1567,7 @@ int main()
     directionalShader->setVec3("dir_light.lightPos", Light::position);
     directionalShader->setVec3("dir_light.direction", Light::direction); 
     directionalShader->setFloat("material.shininess", 32.0f);
+
     
     glUseProgram(0);
 
@@ -1537,6 +1582,8 @@ int main()
     unsigned int cliffTexture = loadTexture("Textures/cliff.jpg");
     unsigned int windMap = loadTexture("Textures/wind.jpg");
     unsigned int cliffNormalMap = loadTexture("Textures/cliffBump.png");
+    castleNormal = loadTexture("Textures/castleNormal5.jpg");
+
     stbi_set_flip_vertically_on_load(false);
     int pw, ph;
     unsigned int pathTexture = Terrain::LoadHeightmap("Textures/hmap10_path2.png", &pw, &ph);
@@ -1585,6 +1632,73 @@ int main()
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    
+    // configure skybox
+    float skyboxVertices[] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+
+    unsigned int skyboxVAO, skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+    std::vector<std::string> faces
+    {
+        "./Textures/skybox/right.jpg",
+        "./Textures/skybox/left.jpg",
+        "./Textures/skybox/top.jpg",
+        "./Textures/skybox/bottom.jpg",
+        "./Textures/skybox/front.jpg",
+        "./Textures/skybox/back.jpg"
+    };
+    unsigned int skybox = loadCubemap(faces);
  
     // load models
     Model tree = Model("./Models/treeModelLowPoly.obj");
@@ -1684,6 +1798,22 @@ int main()
         }
        
 
+        // draw skybox as last
+        glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+        skyboxShader->use();
+        glm::mat4 view = glm::mat4(glm::mat3(camera->GetViewMatrix())); // remove translation from the view matrix
+        skyboxShader->setMat4("view", view);
+        skyboxShader->setMat4("projection", camera->GetProjectionMatrix());
+        skyboxShader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]) );
+        skyboxShader->setFloat("fogStart", ImguiHelper::fogStart);
+        skyboxShader->setFloat("fogEnd", ImguiHelper::fogEnd);
+        // skybox cube
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glDepthFunc(GL_LESS); // set depth function back to default
         
 
         glCheckError();
@@ -2104,9 +2234,13 @@ void renderScene(Shader* shader, Shader* directionalShader, unsigned int cubeTex
     directionalShader->setVec4("fogColor", glm::vec4(ImguiHelper::fogColor[0], ImguiHelper::fogColor[1], ImguiHelper::fogColor[2], ImguiHelper::fogColor[3]));
     directionalShader->setVec3("viewPos", camera->GetPosition());
     directionalShader->setBool("useFog", ImguiHelper::useFog);
+    directionalShader->setVec3("lightPos", Light::position);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, castleNormal);
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, depthMap);
     castle->draw(*directionalShader);
+
 
     //Render Trees
     treeShader.use();

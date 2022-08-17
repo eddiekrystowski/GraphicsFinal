@@ -36,11 +36,16 @@ in vec3 FragPos;
 in vec2 TexCoords;
 in vec4 FragPosLightSpace;
 
+in vec3 TangentLightPos;
+in vec3 TangentViewPos;
+in vec3 TangentFragPos;
+
 uniform pointLight pointLights[4];
 uniform int num_points;
 uniform directionalLight dir_light;
 uniform Material material;
 uniform vec3 viewPos;
+uniform vec3 lightPos;
 
 uniform float fogStart;
 uniform float fogEnd;
@@ -48,6 +53,7 @@ uniform vec4 fogColor;
 uniform bool useFog;
 
 uniform sampler2D shadowMap;
+uniform sampler2D normalMap;
 
 uniform float gamma;
 uniform bool useGamma;
@@ -58,14 +64,19 @@ vec3 directional() {
     vec3 ambient = dir_light.ambient * texture(material.texture_diffuse1, TexCoords).rgb;
 
     //calculate diffuse
-    vec3 norm = normalize(Normal);
+    //vec3 norm = normalize(Normal);
+    vec3 norm = texture(normalMap, TexCoords).rgb;
+    norm = normalize(norm * 2.0 - 1.0);
     //vec3 lightDir = normalize(dir_light.lightPos - FragPos);
-    vec3 lightDir = normalize(-dir_light.direction);
+    //vec3 lightDir = normalize(-dir_light.direction);
+    vec3 lightDir = normalize(TangentLightPos - TangentFragPos);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = dir_light.diffuse * diff * texture(material.texture_diffuse1, TexCoords).rgb;
 
     //calculate specular
-    vec3 viewDir = normalize(viewPos - FragPos);
+    //vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 viewDir = normalize(TangentViewPos - TangentFragPos);
+
     vec3 reflectDir = reflect(-lightDir, norm);
     vec3 halfwayDir = normalize(lightDir + viewDir);  
     float spec = 0.0f;
